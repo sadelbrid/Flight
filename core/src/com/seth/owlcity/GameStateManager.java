@@ -1,5 +1,6 @@
 package com.seth.owlcity;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import java.util.Stack;
@@ -9,9 +10,8 @@ import java.util.Stack;
  */
 public class GameStateManager {
     private Stack<State> states;
-    public GameStateManager(State s){
+    public GameStateManager(){
         states = new Stack<>();
-        states.push(s);
     }
 
     public void pop(){
@@ -28,10 +28,43 @@ public class GameStateManager {
     }
 
     public void update(float dt){
+        //Music
+        if(OwlCityTribute.loops.get(0).isPlaying()){
+            OwlCityTribute.loopOneTime += dt;
+            if(OwlCityTribute.loops.get(1).isPlaying() && OwlCityTribute.loopOneTime > 5){ //means its time to fade
+                OwlCityTribute.loops.get(0).setVolume(OwlCityTribute.loops.get(0).getVolume() - ((1f/.17f))*dt);
+            }
+            if(OwlCityTribute.loopOneTime > 68.1){
+                OwlCityTribute.loopOneTime = 0f;
+                OwlCityTribute.loops.get(1).setVolume(1f);
+                OwlCityTribute.loops.get(1).play();
+            }
+        }
+        if(OwlCityTribute.loops.get(1).isPlaying()){
+            OwlCityTribute.loopTwoTime += dt;
+            if(OwlCityTribute.loops.get(0).isPlaying() && OwlCityTribute.loopTwoTime > 5){
+                OwlCityTribute.loops.get(1).setVolume(OwlCityTribute.loops.get(1).getVolume() - (1f/.17f)*dt);
+            }
+            if(OwlCityTribute.loopTwoTime > 68.1){
+                OwlCityTribute.loopTwoTime = 0f;
+                OwlCityTribute.loops.get(0).setVolume(1f);
+                OwlCityTribute.loops.get(0).play();
+            }
+        }
+        else{
+            OwlCityTribute.introTime += dt;
+            if(OwlCityTribute.intro.isPlaying() && OwlCityTribute.introTime > 76f) {
+                OwlCityTribute.loops.get(0).play();
+            }
+
+        }
         states.peek().update(dt);
     }
 
     public void render(SpriteBatch sb){
         states.peek().render(sb);
+    }
+    public void reload(){
+        this.states.peek().reload();
     }
 }
