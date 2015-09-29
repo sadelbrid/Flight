@@ -63,7 +63,7 @@ public class Space extends State {
         cloud = new Texture("cloud.png");
         playerXOffset = OwlCityTribute.WIDTH*.4f;
         femaleControlled = new FluctuatingObject((int)playerXOffset + (int)(OwlCityTribute.WIDTH*.8f), 2f, (int)(OwlCityTribute.HEIGHT*.5), (int)(OwlCityTribute.HEIGHT*.25), 0);
-        textCount = -1;
+        textCount =2;
         note = new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth), 2f, 200, 50, -250);
         noteAnim = new Animation(new TextureRegion(new Texture("paper.png")), 9, .5f);
         planeRegion = new TextureRegion(player.getPlane());
@@ -128,8 +128,15 @@ public class Space extends State {
     @Override
     public void update(float dt) {
         handleInput();
-
-        if(whiteOverlay <= 0f) player.update(dt); //So player can be controlled upward from Sky
+        if(finished) {
+            player.getVelocity().add(0, -player.gravity*.17f);
+            player.getVelocity().scl(dt);
+            player.getPosition().add(player.movement * dt, player.getVelocity().y);
+            player.getVelocity().scl(1 / dt);
+            float temp = player.normalize(-450, 200, (float)-Math.PI/4f, (float)Math.PI/4f, player.getVelocity().y);
+            player.rotation = 25*(float)Math.sin(temp);
+        }
+        else if(whiteOverlay <= 0f) player.update(dt); //So player can be controlled upward from Sky
         else{
             //Lift player
             whiteOverlay -= .275f*dt;
@@ -142,7 +149,15 @@ public class Space extends State {
 
         }
 
-        //Female
+        if(whiteOverlay > 1) {
+            dispose();
+            this.gsm.setState(new Credits(this.gsm));
+        }
+
+        //Finish
+        if(finished && textBox.finished && player.getPosition().y > OwlCityTribute.HEIGHT + player.getPlane().getHeight()) whiteOverlay +=.35*dt;
+
+            //Female
         if(femaleIntro){
             femaleControlled.MOVEMENT = player.movement;
             femaleControlled.update(dt);
@@ -229,14 +244,12 @@ public class Space extends State {
                     if(!finished) {
                         this.gsm.setState(new Space(this.gsm));
                     }
-                    else {
-                        this.gsm.setState(new Menu(gsm));
-                    }
                 }
             }
+            if(whiteOverlay > 1 && textCount == sceneText.size()-1) this.gsm.setState(new Menu(gsm));
         }
         else{
-            whiteValue = (whiteValue < 1f) ? whiteValue+.4f*dt : 1f;
+            whiteValue = (whiteValue < 1f && !finished) ? whiteValue+.4f*dt : 1f;
         }
 
         //Shimmer update

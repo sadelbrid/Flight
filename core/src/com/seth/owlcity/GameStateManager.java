@@ -53,7 +53,7 @@ public class GameStateManager {
         }
         else{
             OwlCityTribute.introTime += dt;
-            if(OwlCityTribute.intro.isPlaying() && OwlCityTribute.introTime > 76f) {
+            if(OwlCityTribute.intro.isPlaying() && OwlCityTribute.introTime > 75f) {
                 OwlCityTribute.loops.get(0).play();
             }
 

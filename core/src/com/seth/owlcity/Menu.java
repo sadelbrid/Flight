@@ -28,7 +28,7 @@ public class Menu extends State {
     private Texture plane;
     private ShapeRenderer sr;
     private float whitevalue;
-    private double ringAlpha;
+    private float whiteOverlay;
     private boolean fadingIn;
     private boolean fadingOut;
     private Array<FluctuatingObject> clouds;
@@ -54,10 +54,10 @@ public class Menu extends State {
         clouds = new Array<FluctuatingObject>();
         clouds.add(new FluctuatingObject((int)(OwlCityTribute.WIDTH*.6f), 0f, (int)(OwlCityTribute.HEIGHT*.6f), 0, -75));
         clouds.add(new FluctuatingObject((int)clouds.get(0).getPosition().x + (int)(OwlCityTribute.WIDTH*.8f), 0f, (int)(OwlCityTribute.HEIGHT*.6f), 0, -75));
-        whitevalue = 0;
-        ringAlpha = 0;
+        whitevalue = 1f;
         fadingIn = true;
         fadingOut = false;
+        whiteOverlay = 1;
     }
 
     @Override
@@ -72,9 +72,10 @@ public class Menu extends State {
     public void update(float dt) {
         handleInput();
         if(fadingIn){
-            whitevalue += .75f*dt;
-            if(whitevalue > 1f) {
-                whitevalue = 1f;
+            whiteOverlay -= dt;
+            Gdx.app.log("whiteoverlay", Float.toString(whiteOverlay));
+            if(whiteOverlay < 0) {
+                whiteOverlay = 0f;
                 fadingIn = false;
             }
         }
@@ -101,12 +102,6 @@ public class Menu extends State {
                 clouds.get(i).yOffset = random.nextInt((int)(OwlCityTribute.HEIGHT*.1f)) + (int)(OwlCityTribute.HEIGHT*.5f);
             }
         }
-
-        if(whitevalue == 1f){
-            ringAlpha += dt;
-        }
-        Gdx.app.log("", Boolean.toString(fadingOut));
-
     }
 
 
@@ -142,6 +137,14 @@ public class Menu extends State {
         sb.setColor(whitevalue, whitevalue, whitevalue, .5f);
         sb.draw(vignette, 0, 0, OwlCityTribute.WIDTH , OwlCityTribute.HEIGHT);
         sb.end();
+        if(fadingIn) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            sr.begin(ShapeRenderer.ShapeType.Filled);
+            sr.setProjectionMatrix(cam.combined);
+            sr.setColor(1f, 1f, 1f, whiteOverlay);
+            sr.rect(0, 0, OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT);
+            sr.end();
+        }
     }
 
     @Override
