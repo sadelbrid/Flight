@@ -51,9 +51,10 @@ public class GameStateManager {
                 OwlCityTribute.loops.get(0).play();
             }
         }
-        else{
+        if(OwlCityTribute.intro.isPlaying()){
             OwlCityTribute.introTime += dt;
-            if(OwlCityTribute.intro.isPlaying() && OwlCityTribute.introTime > 75f) {
+            Gdx.app.log("", Float.toString(OwlCityTribute.introTime));
+            if(OwlCityTribute.introTime > 75f) {
                 OwlCityTribute.loops.get(0).play();
             }
 

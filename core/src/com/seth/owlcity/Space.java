@@ -63,7 +63,7 @@ public class Space extends State {
         cloud = new Texture("cloud.png");
         playerXOffset = OwlCityTribute.WIDTH*.4f;
         femaleControlled = new FluctuatingObject((int)playerXOffset + (int)(OwlCityTribute.WIDTH*.8f), 2f, (int)(OwlCityTribute.HEIGHT*.5), (int)(OwlCityTribute.HEIGHT*.25), 0);
-        textCount =2;
+        textCount =-1;
         note = new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth), 2f, 200, 50, -250);
         noteAnim = new Animation(new TextureRegion(new Texture("paper.png")), 9, .5f);
         planeRegion = new TextureRegion(player.getPlane());
@@ -135,6 +135,7 @@ public class Space extends State {
             player.getVelocity().scl(1 / dt);
             float temp = player.normalize(-450, 200, (float)-Math.PI/4f, (float)Math.PI/4f, player.getVelocity().y);
             player.rotation = 25*(float)Math.sin(temp);
+            playerXOffset -= 50*dt;
         }
         else if(whiteOverlay <= 0f) player.update(dt); //So player can be controlled upward from Sky
         else{
@@ -157,17 +158,9 @@ public class Space extends State {
         //Finish
         if(finished && textBox.finished && player.getPosition().y > OwlCityTribute.HEIGHT + player.getPlane().getHeight()) whiteOverlay +=.35*dt;
 
-            //Female
-        if(femaleIntro){
-            femaleControlled.MOVEMENT = player.movement;
-            femaleControlled.update(dt);
-            //femaleIntro = player.getPosition().y - femaleControlled.getPosition().y > OwlCityTribute.HEIGHT*.1;
-        }
-        else{
-            femaleControlled.MOVEMENT = player.movement;
-            femaleControlled.update(dt);
-        }
-
+        //Female
+        femaleControlled.MOVEMENT = player.movement;
+        femaleControlled.update(dt);
 
 
         readyToFadeBlack = fallen = player.getPosition().y == -OwlCityTribute.HEIGHT*.1f;
@@ -339,9 +332,7 @@ public class Space extends State {
 
         //Draw female
         sb.setColor(whiteValue, whiteValue * (200f / 255f), whiteValue, 1f);
-        //sb.set
-        if(femaleIntro)
-            sb.draw(planeRegion, femaleControlled.getPosition().x, femaleControlled.getPosition().y, planeRegion.getRegionWidth() / 2, planeRegion.getRegionHeight() / 2, player.getPlane().getWidth() * .65f, player.getPlane().getHeight() * .65f, 1, 1, .25f*(float)Math.toDegrees(Math.cos(femaleControlled.flow)));
+        sb.draw(planeRegion, femaleControlled.getPosition().x, femaleControlled.getPosition().y, planeRegion.getRegionWidth() / 2, planeRegion.getRegionHeight() / 2, player.getPlane().getWidth() * .65f, player.getPlane().getHeight() * .65f, 1, 1, .25f*(float)Math.toDegrees(Math.cos(femaleControlled.flow)));
 
 
         sb.setColor(whiteValue, whiteValue, whiteValue, .5f);

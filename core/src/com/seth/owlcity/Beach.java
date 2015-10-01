@@ -28,6 +28,7 @@ public class Beach extends State {
     private Texture sandTexture;
     private Texture waterTexture;
     private Texture cloud;
+    private Texture shadow;
     private float playerXOffset;
     private float femaleXOffset;
     private Array<FluctuatingObject> sand;
@@ -58,6 +59,7 @@ public class Beach extends State {
     private Random random;
     private float noteScale;
     private boolean shrinking;
+    //private fl
     public Beach(GameStateManager gsm){
         super(gsm);
         cam.setToOrtho(false, OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT);
@@ -67,6 +69,7 @@ public class Beach extends State {
         waterTexture = new Texture("waves.png");
         vignette = new Texture("vignette.png");
         cloud = new Texture("cloud.png");
+        shadow = new Texture("shadow.png");
         playerXOffset = OwlCityTribute.WIDTH*.4f;
 
         textCount = -1;
@@ -304,6 +307,7 @@ public class Beach extends State {
         waterTexture.dispose();
         sr.dispose();
         player.getPlane().dispose();
+        shadow.dispose();
     }
 
     @Override
@@ -389,6 +393,10 @@ public class Beach extends State {
 
         }
 
+        //Draw shadow
+        float temp = OwlCityTribute.HEIGHT*.45f - ((player.getPosition().y - OwlCityTribute.HEIGHT*.1f) - OwlCityTribute.HEIGHT*.45f);
+        sb.setColor(whiteValue, whiteValue, whiteValue, temp/OwlCityTribute.HEIGHT*.9f);
+        sb.draw(shadow, player.getPosition().x- shadow.getWidth()/2 + player.getPlane().getWidth()*.3f, OwlCityTribute.HEIGHT*.1f - shadow.getHeight()*.4f);
         //Draw player
         sb.setColor(whiteValue, whiteValue, whiteValue, 1f);
         sb.draw(planeRegion, player.getPosition().x, player.getPosition().y, planeRegion.getRegionWidth() / 2, planeRegion.getRegionHeight() / 2, player.getPlane().getWidth() * .75f, player.getPlane().getHeight() * .75f, 1, 1, player.rotation);

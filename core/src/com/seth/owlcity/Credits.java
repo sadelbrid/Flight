@@ -2,6 +2,7 @@ package com.seth.owlcity;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -19,11 +20,15 @@ public class Credits extends State{
     private ShapeRenderer sr;
     public Credits(GameStateManager gsm){
         super(gsm);
+        cam.setToOrtho(false, OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT);
         size = 1f;
         opacity = 0f;
         one = new Texture("createdBy.png");
+        Gdx.app.log("one", one.toString());
         two = new Texture("inspiredBy.png");
+        Gdx.app.log("two", two.toString());
         three = new Texture("featuring.png");
+        Gdx.app.log("three", three.toString());
         sr = new ShapeRenderer();
         sr.setColor(Color.WHITE);
         count = 1;
@@ -50,10 +55,14 @@ public class Credits extends State{
 
     @Override
     public void render(SpriteBatch sb) {
+        sr.setProjectionMatrix(cam.combined);
         sr.begin(ShapeRenderer.ShapeType.Filled);
         sr.rect(0, 0, OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT);
         sr.end();
+        sb.setProjectionMatrix(cam.combined);
         sb.begin();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+
         sb.setColor(1f, 1f, 1f, (float)Math.sin(opacity));
         switch(count){
             case 1:

@@ -32,7 +32,7 @@ public class OwlCityTribute extends ApplicationAdapter {
 		loops.get(0).setLooping(false);
 		loops.get(1).setLooping(false);
 		gsm = new GameStateManager();
-		gsm.push(new Credits(gsm));
+		gsm.push(new Menu(gsm));
 		intro.play();
 	}
 

@@ -36,10 +36,9 @@ public class Sky extends State {
     private FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
     private BitmapFont font;
     private Animation noteAnim;
-    private  float noteRotation;
+    private float noteRotation;
     private int textCount;
     private boolean waiting;
-    private boolean zooming;
     private float whiteValue;
     private boolean readyToFadeBlack;
     private boolean readyToFadeWhite;
@@ -91,7 +90,6 @@ public class Sky extends State {
         textBox = new TextBox();
         sr = new ShapeRenderer();
         waiting = false;
-        zooming = false;
         whiteValue = 0f;
         readyToFadeBlack = false;
         boxInitialized = false;

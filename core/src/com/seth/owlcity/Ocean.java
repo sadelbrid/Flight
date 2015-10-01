@@ -28,6 +28,7 @@ public class Ocean extends State {
     private Texture vignette;
     private Texture background;
     private Texture sandTexture;
+    private Texture shadow;
     private Texture cloud;
     private Texture boat;
     private Texture light;
@@ -62,7 +63,7 @@ public class Ocean extends State {
         super(gsm);
         cam.setToOrtho(false, OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT);
         random = new Random(System.currentTimeMillis());
-        player = new Player(OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT, OwlCityTribute.HEIGHT*.575f, OwlCityTribute.HEIGHT*.1f);
+        player = new Player(OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT, OwlCityTribute.HEIGHT*.575f, OwlCityTribute.HEIGHT*.05f);
         player.gravity = -3;
         background = new Texture("oceanbg.png");
         sandTexture = new Texture("sand.png");
@@ -71,6 +72,7 @@ public class Ocean extends State {
         boat = new Texture("boat.png");
         light = new Texture("light.png");
         plane = new Texture("plane.png");
+        shadow = new Texture("shadow.png");
         playerXOffset = OwlCityTribute.WIDTH*.4f;
         textCount = -1;
         sand = new Array<FluctuatingObject>();
@@ -78,14 +80,14 @@ public class Ocean extends State {
         boatFluctuation = new FluctuatingObject(0, 1f, (int)(OwlCityTribute.HEIGHT*.71f), (int)(OwlCityTribute.HEIGHT*.008), 0);
         noteAnim = new Animation(new TextureRegion(new Texture("paper.png")), 9, .5f);
         for(int i = 0; i<3; i++){
-            sand.add(new FluctuatingObject(i*sandTexture.getWidth() + (int)(player.getPosition().x - cam.viewportWidth / 2 + playerXOffset), 0, -50, 0, 0));
+            sand.add(new FluctuatingObject(i*sandTexture.getWidth() + (int)(player.getPosition().x - cam.viewportWidth / 2 + playerXOffset), 0, (int)(-OwlCityTribute.HEIGHT*.15f), 0, 0));
         }
 
         clouds = new Array<FluctuatingObject>();
         clouds.add(new FluctuatingObject((int)(player.getPosition().x - cam.viewportWidth*.1), 0f,
-                random.nextInt((int)(OwlCityTribute.HEIGHT*.1f)) + (int)(OwlCityTribute.HEIGHT*.8f), 0, -50));
+                random.nextInt((int)(OwlCityTribute.HEIGHT*.1f)) + (int)(OwlCityTribute.HEIGHT*.8f), 0, -25));
         clouds.add(new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth*.7), 0f,
-                random.nextInt((int)(OwlCityTribute.HEIGHT*.1f)) + (int)(OwlCityTribute.HEIGHT*.8f), 0, -50));
+                random.nextInt((int)(OwlCityTribute.HEIGHT*.1f)) + (int)(OwlCityTribute.HEIGHT*.8f), 0, -25));
         sr = new ShapeRenderer();
         noteRotation = 0f;
         for(int i = 0; i < 6; i++) this.sceneText.add(new ArrayList<String>());
@@ -104,11 +106,11 @@ public class Ocean extends State {
         sceneText.get(4).add("I knew you'd remember");
         sceneText.get(4).add("that day in November");
 
-        sceneText.get(5).add("As we felt");
+        sceneText.get(5).add("since we felt");
         sceneText.get(5).add("alive again.");
 
         parameter.size = 20;
-        parameter.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.";
+        parameter.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'. ";
 
         font = generator.generateFont(parameter);
         generator.dispose();
@@ -281,6 +283,7 @@ public class Ocean extends State {
         light.dispose();
         player.getPlane().dispose();
         plane.dispose();
+        shadow.dispose();
     }
 
     @Override
@@ -289,6 +292,10 @@ public class Ocean extends State {
         sb.begin();
         sb.setColor(whiteValue, whiteValue, whiteValue, 1f);
         sb.draw(background, player.getPosition().x - cam.viewportWidth / 2 + playerXOffset, 0, cam.viewportWidth, cam.viewportHeight);
+        //Sand
+//        for (FluctuatingObject f : sand){
+//            sb.draw(sandTexture, f.getPosition().x, f.getPosition().y);
+//        }
         sb.end();
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -370,6 +377,10 @@ public class Ocean extends State {
                 noteRotation);
 
         sb.setColor((200f / 255f) * whiteValue, whiteValue, whiteValue, 1f);
+        //Draw shadow
+        float temp = OwlCityTribute.HEIGHT*.45f - ((player.getPosition().y - OwlCityTribute.HEIGHT*.1f) - OwlCityTribute.HEIGHT*.45f);
+        sb.setColor(whiteValue, whiteValue, whiteValue, temp / OwlCityTribute.HEIGHT * .9f);
+        sb.draw(shadow, player.getPosition().x - shadow.getWidth() / 2 + player.getPlane().getWidth() * .3f, OwlCityTribute.HEIGHT * .05f - shadow.getHeight() * .4f);
         //Draw player
         sb.draw(plane, player.getPosition().x, player.getPosition().y, plane.getWidth() / 2, plane.getHeight() / 2,
                 plane.getWidth() * .75f, plane.getHeight() * .75f, 1, 1, player.rotation, 0, 0, plane.getWidth(),
