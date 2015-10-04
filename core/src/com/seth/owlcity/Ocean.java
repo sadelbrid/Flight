@@ -160,6 +160,14 @@ public class Ocean extends State {
         noteRotation += 100f*dt;
         if(noteRotation > 360) noteRotation = 0;
 
+        //Player Offset
+        if(player.movement < player.maxMovement/2){
+            playerXOffset += 10*dt;
+        }
+        else{
+            playerXOffset -= 20*dt;
+        }
+        if(playerXOffset < OwlCityTribute.WIDTH*.4f) playerXOffset = OwlCityTribute.WIDTH*.4f;
         cam.position.x = player.getPosition().x + playerXOffset;
         float leftEdge = player.getPosition().x - (cam.viewportWidth/2) + playerXOffset;
 

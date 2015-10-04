@@ -10,7 +10,7 @@ import com.badlogic.gdx.math.Vector2;
 public class Player {
     public int gravity;
     public int maxMovement = 100;
-    public int movement = 100;
+    public int movement;
     private Vector2 position;
     private Vector2 velocity;
     private Texture plane;

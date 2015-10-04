@@ -53,7 +53,7 @@ public class GameStateManager {
         }
         if(OwlCityTribute.intro.isPlaying()){
             OwlCityTribute.introTime += dt;
-            Gdx.app.log("", Float.toString(OwlCityTribute.introTime));
+            //Gdx.app.log("", Float.toString(OwlCityTribute.introTime));
             if(OwlCityTribute.introTime > 75f) {
                 OwlCityTribute.loops.get(0).play();
             }
@@ -63,6 +63,11 @@ public class GameStateManager {
     }
 
     public void render(SpriteBatch sb){
+        if(states.size() > 1){
+            State top = states.pop();
+            render(sb);
+            states.push(top);
+        }
         states.peek().render(sb);
     }
     public void reload(){

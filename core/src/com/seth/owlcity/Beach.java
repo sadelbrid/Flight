@@ -170,7 +170,7 @@ public class Beach extends State {
             }
             leftEdge = female.getPosition().x - (cam.viewportWidth/2) + femaleXOffset;
             if(adjusting){
-                playerXOffset += 10*dt;
+                playerXOffset += 20*dt;
                 if(playerXOffset > OwlCityTribute.WIDTH*.4){
                     playerXOffset = OwlCityTribute.WIDTH*.4f;
                     adjusting = false;
@@ -185,6 +185,14 @@ public class Beach extends State {
             noteRotation += 100f*dt;
             if(noteRotation > 360) noteRotation = 0;
             leftEdge = player.getPosition().x - (cam.viewportWidth/2) + playerXOffset;
+            //Player Offset
+            if(player.movement < player.maxMovement/2){
+                playerXOffset += 10*dt;
+            }
+            else{
+                playerXOffset -= 20*dt;
+            }
+            if(playerXOffset < OwlCityTribute.WIDTH*.4f) playerXOffset = OwlCityTribute.WIDTH*.4f;
             cam.position.x = player.getPosition().x + playerXOffset;
 
             //Check if note is hit
