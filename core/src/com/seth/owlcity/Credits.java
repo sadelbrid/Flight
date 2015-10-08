@@ -89,9 +89,4 @@ public class Credits extends State{
         three.dispose();
         sr.dispose();
     }
-
-    @Override
-    public void reload() {
-
-    }
 }

@@ -10,6 +10,11 @@ import java.util.Stack;
  */
 public class GameStateManager {
     private Stack<State> states;
+    public static final int BEACH = 0;
+    public static final int OCEAN = 1;
+    public static final int SKY = 2;
+    public static final int SPACE = 3;
+    public int currentState;
     public GameStateManager(){
         states = new Stack<>();
     }
@@ -20,6 +25,10 @@ public class GameStateManager {
 
     public void push(State s){
         states.push(s);
+    }
+
+    public State peek(){
+        return states.peek();
     }
 
     public void setState(State s){
@@ -34,7 +43,7 @@ public class GameStateManager {
             if(OwlCityTribute.loops.get(1).isPlaying() && OwlCityTribute.loopOneTime > 5){ //means its time to fade
                 OwlCityTribute.loops.get(0).setVolume(OwlCityTribute.loops.get(0).getVolume() - ((1f/.17f))*dt);
             }
-            if(OwlCityTribute.loopOneTime > 68.1){
+            if(OwlCityTribute.loopOneTime > 68.5){
                 OwlCityTribute.loopOneTime = 0f;
                 OwlCityTribute.loops.get(1).setVolume(1f);
                 OwlCityTribute.loops.get(1).play();
@@ -45,7 +54,7 @@ public class GameStateManager {
             if(OwlCityTribute.loops.get(0).isPlaying() && OwlCityTribute.loopTwoTime > 5){
                 OwlCityTribute.loops.get(1).setVolume(OwlCityTribute.loops.get(1).getVolume() - (1f/.17f)*dt);
             }
-            if(OwlCityTribute.loopTwoTime > 68.1){
+            if(OwlCityTribute.loopTwoTime > 68.5){
                 OwlCityTribute.loopTwoTime = 0f;
                 OwlCityTribute.loops.get(0).setVolume(1f);
                 OwlCityTribute.loops.get(0).play();
@@ -53,11 +62,21 @@ public class GameStateManager {
         }
         if(OwlCityTribute.intro.isPlaying()){
             OwlCityTribute.introTime += dt;
-            //Gdx.app.log("", Float.toString(OwlCityTribute.introTime));
-            if(OwlCityTribute.introTime > 75f) {
+            Gdx.app.log("intro time", Float.toString(OwlCityTribute.introTime));
+            if(OwlCityTribute.introTime > 75.3f) {
                 OwlCityTribute.loops.get(0).play();
             }
 
+        }
+        //states.peek().update(dt);
+        updateStates(dt);
+    }
+
+    private void updateStates(float dt){
+        if(states.size() > 1){
+            State top = states.pop();
+            updateStates(dt);
+            states.push(top);
         }
         states.peek().update(dt);
     }
@@ -69,8 +88,5 @@ public class GameStateManager {
             states.push(top);
         }
         states.peek().render(sb);
-    }
-    public void reload(){
-        this.states.peek().reload();
     }
 }

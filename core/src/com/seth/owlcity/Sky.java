@@ -24,7 +24,9 @@ public class Sky extends State {
     private Texture vignette;
     private Texture background;
     private Texture cloud;
-    private float playerXOffset;
+    private Texture pauseButton;
+
+    //private float playerXOffset;
     private Array<FluctuatingObject> clouds;
     private Array<Shimmer> shimmers;
 
@@ -40,7 +42,7 @@ public class Sky extends State {
     private int textCount;
     private boolean waiting;
     private float whiteValue;
-    private boolean readyToFadeBlack;
+    //private boolean readyToFadeBlack;
     private boolean readyToFadeWhite;
     private boolean boxInitialized;
     private boolean fallen;
@@ -56,7 +58,8 @@ public class Sky extends State {
         background = new Texture("skybg.png");
         vignette = new Texture("vignette.png");
         cloud = new Texture("cloud.png");
-        playerXOffset = OwlCityTribute.WIDTH*.4f;
+        pauseButton = new Texture("pause.png");
+        //playerXOffset = OwlCityTribute.WIDTH*.4f;
         textCount = -1;
         note = new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth), 2f, 200, 50, -250);
         noteAnim = new Animation(new TextureRegion(new Texture("paper.png")), 9, .5f);
@@ -91,7 +94,7 @@ public class Sky extends State {
         sr = new ShapeRenderer();
         waiting = false;
         whiteValue = 0f;
-        readyToFadeBlack = false;
+        //readyToFadeBlack = false;
         boxInitialized = false;
 
         random = new Random(System.currentTimeMillis());
@@ -110,113 +113,127 @@ public class Sky extends State {
 
     @Override
     protected void handleInput() {
-        if(Gdx.input.justTouched() /*&& textCount < sceneText.size()-1*/ && !readyToFadeWhite && !fallen) player.lift();
+        if(Gdx.input.justTouched() && !readyToFadeWhite && !fallen){
+            if(Gdx.input.getX() < Gdx.graphics.getWidth()*.05f + pauseButton.getWidth()*Gdx.graphics.getDensity() &&
+                    Gdx.input.getY() > Gdx.graphics.getHeight()*.05f - pauseButton.getHeight()*Gdx.graphics.getDensity()){
+                gsm.push(new Pause(gsm));
+                paused = true;
+            }
+            else player.lift();
+        }
     }
 
     @Override
     public void update(float dt) {
-        handleInput();
-        if(!readyToFadeWhite) player.update(dt); //So player can be controlled upward from Sky
-        else{
-            //Lift player
-            whiteOverlay += .3f*dt;
-            player.getVelocity().add(0, -player.gravity/2);
-            player.getVelocity().scl(dt);
-            player.getPosition().add(player.movement * dt, player.getVelocity().y);
-            player.getVelocity().scl(1 / dt);
-            float temp = player.normalize(-450, 200, (float)-Math.PI/4f, (float)Math.PI/4f, player.getVelocity().y);
-            player.rotation = 25*(float)Math.sin(temp);
-            if(whiteOverlay > 1f){
-                dispose();
-                this.gsm.setState(new Space(this.gsm));
-            }
-        }
-        readyToFadeBlack = fallen = player.getPosition().y == -OwlCityTribute.HEIGHT*.1f;
-        note.update(dt);
-        noteAnim.update(dt);
-        noteRotation += 100f*dt;
-        if(noteRotation > 360) noteRotation = 0;
-
-        cam.position.x = player.getPosition().x + playerXOffset;
-        float leftEdge = player.getPosition().x - (cam.viewportWidth/2) + playerXOffset;
-
-        //Check if note is hit
-        if(!shrinking && Math.sqrt(Math.pow((player.getPosition().x + player.getPlane().getWidth()*.75f) - note.getPosition().x, 2) + Math.pow((player.getPosition().y + (player.getPlane().getHeight()*.75f)/2) - (note.getPosition().y + noteAnim.getFrame().getRegionHeight()/2), 2)) < 40){
-            //Open textbox
-            textCount++;
-            textBox.prepare(sceneText.get(textCount)
-                            .get(0),
-                    (sceneText.get(textCount).size() == 1) ? "" : sceneText.get(textCount).get(1), .1f);
-            boxInitialized = true;
-
-            //Set bounds
-            int w =  (int)font.getBounds(sceneText.get(textCount).get(0)).width;
-            //int h = (int)(font.getBounds(sceneText.get(textCount).get(0)).height*2.5);
-            int h = (int)(font.getBounds(sceneText.get(textCount).get(0)).height*sceneText.get(textCount).size() * 1.5);
-            textBox.setBounds(w, h, (int)(OwlCityTribute.WIDTH*.75) - w/2, (int)(OwlCityTribute.HEIGHT*.875)-h/2);
-            waiting = true;
-            shrinking = true;
-        }
-        else if(note.getPosition().x < leftEdge - noteAnim.getFrame().getRegionWidth() && !waiting && textCount < sceneText.size()-1 && player.movement > player.maxMovement*.75){
-            note.getPosition().x = player.getPosition().x + cam.viewportWidth;
-            note.setyOffset((int) (Math.random() * 100) + 200);
-        }
-
-        if(shrinking) {
-            noteScale -=2.5*dt;
-            if(noteScale < 0){
-                shrinking = false;
-                noteScale = 1f;
-                note.getPosition().x -= cam.viewportWidth;
-            }
-        }
-
-        if(textBox.readyToUpdate) {
-            if(!textBox.update(dt)) waiting = true;
+        if(!paused) {
+            handleInput();
+            if (!readyToFadeWhite) player.update(dt); //So player can be controlled upward from Sky
             else {
-                waiting = false;
-                if(textCount < sceneText.size()-1 && player.movement > player.maxMovement*.75) {
-                    note.getPosition().x = player.getPosition().x + cam.viewportWidth;
-                    note.setyOffset((int) (Math.random() * 100) + 200);
-                }
-            }
-        }
-
-        if(!fallen && boxInitialized && textCount == sceneText.size()-1 && textBox.finished) {
-            readyToFadeWhite = true;
-        }
-
-
-
-        //clouds
-        for(int i= 0; i<clouds.size; i++){
-            clouds.get(i).update(dt);
-            if(clouds.get(i).getPosition().x < leftEdge - cloud.getWidth()) {
-                int index = (i == 0) ? clouds.size-1 : i-1;
-                clouds.get(i).getPosition().x = (float)(clouds.get(index).getPosition().x + cam.viewportWidth*.8);
-                clouds.get(i).yOffset = random.nextInt((int)(OwlCityTribute.HEIGHT*.2f)) - (int)(OwlCityTribute.HEIGHT*.1f);
-            }
-        }
-
-        if(readyToFadeBlack){
-            whiteValue  = (whiteValue > 0) ? whiteValue - .2f*dt : 0f;
-            if(whiteValue == 0f){
-                if(player.getPosition().y == -OwlCityTribute.HEIGHT*.1f){
+                //Lift player
+                whiteOverlay += .3f * dt;
+                player.getVelocity().add(0, -player.gravity / 2);
+                player.getVelocity().scl(dt);
+                player.getPosition().add(player.movement * dt, player.getVelocity().y);
+                player.getVelocity().scl(1 / dt);
+                float temp = player.normalize(-450, 200, (float) -Math.PI / 4f, (float) Math.PI / 4f, player.getVelocity().y);
+                player.rotation = 25 * (float) Math.sin(temp);
+                if (whiteOverlay > 1f) {
                     dispose();
-                    this.gsm.setState(new Sky(this.gsm));
+                    gsm.currentState = GameStateManager.SPACE;
+                    this.gsm.setState(new Space(this.gsm));
                 }
             }
-        }
-        else{
-            whiteValue = (whiteValue < 1f) ? whiteValue+.4f*dt : 1f;
-        }
+            fallen = player.getPosition().y == -OwlCityTribute.HEIGHT * .1f;
 
-        //Shimmer update
-        for(int i = 0; i < NUM_SHIMMERS; i++){
-            shimmers.get(i).update(dt);
-        }
+            if (!loss && fallen) {
+                loss = true;
+                gsm.push(new UponLoss(gsm));
+            }
 
-        cam.update();
+            note.update(dt);
+            noteAnim.update(dt);
+            noteRotation += 100f * dt;
+            if (noteRotation > 360) noteRotation = 0;
+
+            cam.position.x = player.getPosition().x + player.xOffset;
+            float leftEdge = player.getPosition().x - (cam.viewportWidth / 2) + player.xOffset;
+
+            //Check if note is hit
+            if (!shrinking && Math.sqrt(Math.pow((player.getPosition().x + player.getPlane().getWidth() * .75f) - note.getPosition().x, 2) + Math.pow((player.getPosition().y + (player.getPlane().getHeight() * .75f) / 2) - (note.getPosition().y + noteAnim.getFrame().getRegionHeight() / 2), 2)) < 40) {
+                //Open textbox
+                textCount++;
+                textBox.prepare(sceneText.get(textCount)
+                                .get(0),
+                        (sceneText.get(textCount).size() == 1) ? "" : sceneText.get(textCount).get(1), .1f);
+                boxInitialized = true;
+
+                //Set bounds
+                int w = (int) font.getBounds(sceneText.get(textCount).get(0)).width;
+                //int h = (int)(font.getBounds(sceneText.get(textCount).get(0)).height*2.5);
+                int h = (int) (font.getBounds(sceneText.get(textCount).get(0)).height * sceneText.get(textCount).size() * 1.5);
+                textBox.setBounds(w, h, (int) (OwlCityTribute.WIDTH * .75) - w / 2, (int) (OwlCityTribute.HEIGHT * .875) - h / 2);
+                waiting = true;
+                shrinking = true;
+            } else if (note.getPosition().x < leftEdge - noteAnim.getFrame().getRegionWidth() && !waiting && textCount < sceneText.size() - 1 && player.movement > player.maxMovement * .75) {
+                note.getPosition().x = player.getPosition().x + cam.viewportWidth;
+                note.setyOffset((int) (Math.random() * 100) + 200);
+            }
+
+            if (shrinking) {
+                noteScale -= 2.5 * dt;
+                if (noteScale < 0) {
+                    shrinking = false;
+                    noteScale = 1f;
+                    note.getPosition().x -= cam.viewportWidth;
+                }
+            }
+
+            if (textBox.readyToUpdate) {
+                if (!textBox.update(dt)) waiting = true;
+                else {
+                    waiting = false;
+                    if (textCount < sceneText.size() - 1 && player.movement > player.maxMovement * .75) {
+                        note.getPosition().x = player.getPosition().x + cam.viewportWidth;
+                        note.setyOffset((int) (Math.random() * 100) + 200);
+                    }
+                }
+            }
+
+            if (!fallen && boxInitialized && textCount == sceneText.size() - 1 && textBox.finished) {
+                readyToFadeWhite = true;
+            }
+
+
+            //clouds
+            for (int i = 0; i < clouds.size; i++) {
+                clouds.get(i).update(dt);
+                if (clouds.get(i).getPosition().x < leftEdge - cloud.getWidth()) {
+                    int index = (i == 0) ? clouds.size - 1 : i - 1;
+                    clouds.get(i).getPosition().x = (float) (clouds.get(index).getPosition().x + cam.viewportWidth * .8);
+                    clouds.get(i).yOffset = random.nextInt((int) (OwlCityTribute.HEIGHT * .2f)) - (int) (OwlCityTribute.HEIGHT * .1f);
+                }
+            }
+
+//        if(readyToFadeBlack){
+//            whiteValue  = (whiteValue > 0) ? whiteValue - .2f*dt : 0f;
+//            if(whiteValue == 0f){
+//                if(player.getPosition().y == -OwlCityTribute.HEIGHT*.1f){
+//                    dispose();
+//                    this.gsm.setState(new Sky(this.gsm));
+//                }
+//            }
+//        }
+            //else{
+            whiteValue = (whiteValue < 1f) ? whiteValue + .4f * dt : 1f;
+            //}
+
+            //Shimmer update
+            for (int i = 0; i < NUM_SHIMMERS; i++) {
+                shimmers.get(i).update(dt);
+            }
+
+            cam.update();
+        }
     }
 
     @Override
@@ -226,15 +243,16 @@ public class Sky extends State {
         vignette.dispose();
         cloud.dispose();
         player.getPlane().dispose();
+        pauseButton.dispose();
     }
 
     @Override
     public void render(SpriteBatch sb) {
-        float leftEdge = player.getPosition().x - cam.viewportWidth / 2 + playerXOffset;
+        float leftEdge = player.getPosition().x - cam.viewportWidth / 2 + player.xOffset;
         sb.setProjectionMatrix(cam.combined);
         sb.begin();
         sb.setColor(whiteValue, whiteValue, whiteValue, 1f);
-        sb.draw(background, player.getPosition().x - cam.viewportWidth / 2 + playerXOffset, 0, cam.viewportWidth, cam.viewportHeight);
+        sb.draw(background, player.getPosition().x - cam.viewportWidth / 2 + player.xOffset, 0, cam.viewportWidth, cam.viewportHeight);
         sb.end();
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -244,11 +262,13 @@ public class Sky extends State {
         //Draw sparkles
         for(int i = 0; i< NUM_SHIMMERS; i++){
             sr.setColor(whiteValue, whiteValue, whiteValue, Math.abs((float) Math.sin(Math.PI * shimmers.get(i).life / Shimmer.MAX_LIFE)));
-            sr.circle(shimmers.get(i).x + player.getPosition().x - cam.viewportWidth / 2 + playerXOffset, shimmers.get(i).y,
+            sr.circle(shimmers.get(i).x + player.getPosition().x - cam.viewportWidth / 2 + player.xOffset, shimmers.get(i).y,
                     (float) Math.abs(Math.sin(Math.PI * shimmers.get(i).life / Shimmer.MAX_LIFE)) * shimmers.get(i).size);
         }
         sr.end();
         sb.begin();
+        //Draw pause
+        sb.draw(pauseButton, cam.position.x - cam.viewportWidth/2 + cam.viewportWidth*.05f, cam.viewportHeight*.95f - pauseButton.getHeight());
 
         //Draw text
         if(!textBox.finished) {
@@ -330,9 +350,5 @@ public class Sky extends State {
         public void update(float dt){
             Shimmer.this.life += 75*dt;
         }
-    }
-    @Override
-    public void reload() {
-        planeRegion = new TextureRegion(player.getPlane());
     }
 }

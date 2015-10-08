@@ -33,7 +33,8 @@ public class Ocean extends State {
     private Texture boat;
     private Texture light;
     private Texture plane;
-    private float playerXOffset;
+    private Texture pauseButton;
+    //private float player.xOffset;
     private Array<FluctuatingObject> sand;
     private Array<FluctuatingObject> clouds;
     private Array<Shimmer> shimmers;
@@ -73,14 +74,15 @@ public class Ocean extends State {
         light = new Texture("light.png");
         plane = new Texture("plane.png");
         shadow = new Texture("shadow.png");
-        playerXOffset = OwlCityTribute.WIDTH*.4f;
+        pauseButton = new Texture("pause.png");
+        //player.xOffset = OwlCityTribute.WIDTH*.4f;
         textCount = -1;
         sand = new Array<FluctuatingObject>();
         note = new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth), 2f, 200, 50, -100);
         boatFluctuation = new FluctuatingObject(0, 1f, (int)(OwlCityTribute.HEIGHT*.71f), (int)(OwlCityTribute.HEIGHT*.008), 0);
         noteAnim = new Animation(new TextureRegion(new Texture("paper.png")), 9, .5f);
         for(int i = 0; i<3; i++){
-            sand.add(new FluctuatingObject(i*sandTexture.getWidth() + (int)(player.getPosition().x - cam.viewportWidth / 2 + playerXOffset), 0, (int)(-OwlCityTribute.HEIGHT*.15f), 0, 0));
+            sand.add(new FluctuatingObject(i*sandTexture.getWidth() + (int)(player.getPosition().x - cam.viewportWidth / 2 + player.xOffset), 0, (int)(-OwlCityTribute.HEIGHT*.15f), 0, 0));
         }
 
         clouds = new Array<FluctuatingObject>();
@@ -147,137 +149,153 @@ public class Ocean extends State {
 
     @Override
     protected void handleInput() {
-        if(Gdx.input.justTouched() && textCount < sceneText.size()-1) player.lift();
+        if(Gdx.input.justTouched() && textCount < sceneText.size()-1){
+            if(Gdx.input.getX() < Gdx.graphics.getWidth()*.05f + pauseButton.getWidth()*Gdx.graphics.getDensity() &&
+                    Gdx.input.getY() > Gdx.graphics.getHeight()*.05f - pauseButton.getHeight()*Gdx.graphics.getDensity()){
+                gsm.push(new Pause(gsm));
+                paused = true;
+                Gdx.app.log("pausing", "pausing");
+            }
+            else player.lift();
+            Gdx.app.log("event touch", Integer.toString(Gdx.input.getX()) + ", " + Integer.toString(Gdx.input.getY()));
+        }
     }
 
     @Override
     public void update(float dt) {
-        handleInput();
-        player.update(dt);
-        note.update(dt);
-        boatFluctuation.update(dt);
-        noteAnim.update(dt);
-        noteRotation += 100f*dt;
-        if(noteRotation > 360) noteRotation = 0;
+        if (!paused){
+            handleInput();
+            player.update(dt);
+            note.update(dt);
+            boatFluctuation.update(dt);
+            noteAnim.update(dt);
+            noteRotation += 100f * dt;
+            if (noteRotation > 360) noteRotation = 0;
 
-        //Player Offset
-        if(player.movement < player.maxMovement/2){
-            playerXOffset += 10*dt;
-        }
-        else{
-            playerXOffset -= 20*dt;
-        }
-        if(playerXOffset < OwlCityTribute.WIDTH*.4f) playerXOffset = OwlCityTribute.WIDTH*.4f;
-        cam.position.x = player.getPosition().x + playerXOffset;
-        float leftEdge = player.getPosition().x - (cam.viewportWidth/2) + playerXOffset;
-
-        //Check if note is hit
-        if(!shrinking && Math.sqrt(Math.pow((player.getPosition().x + plane.getWidth()*.75f) - note.getPosition().x, 2) + Math.pow((player.getPosition().y + (plane.getHeight()*.75f)/2) - (note.getPosition().y + noteAnim.getFrame().getRegionHeight()/2), 2)) < 40){
-            //Open textbox
-            textCount++;
-            textBox.prepare(sceneText.get(textCount).get(0), sceneText.get(textCount).get(1), .1f);
-            boxInitialized = true;
-
-            //Set bounds
-            int w =  (int)font.getBounds(sceneText.get(textCount).get(0)).width;
-            //int h = (int)(font.getBounds(sceneText.get(textCount).get(0)).height*2.5);
-            int h = (int)(font.getBounds(sceneText.get(textCount).get(0)).height*sceneText.get(textCount).size() * 1.5);
-            textBox.setBounds(w, h, (int)(OwlCityTribute.WIDTH*.4) + w/2, (int)(OwlCityTribute.HEIGHT*.9)-h/2);
-            waiting = true;
-            shrinking = true;
-        }
-        else if(note.getPosition().x < leftEdge - noteAnim.getFrame().getRegionWidth() && !waiting && textCount < sceneText.size()-1 && player.movement > player.maxMovement*.75){
-            note.getPosition().x = player.getPosition().x + cam.viewportWidth;
-            note.setyOffset((int) (Math.random() * 100) + 200);
-        }
-
-        if(shrinking) {
-            noteScale -=2.5*dt;
-            if(noteScale < 0){
-                shrinking = false;
-                noteScale = 1f;
-                note.getPosition().x -= cam.viewportWidth;
+            //Player Offset
+            if (player.movement < player.maxMovement / 2) {
+                player.xOffset += 10 * dt;
+            } else {
+                player.xOffset -= 20 * dt;
             }
-        }
+            if (player.xOffset < OwlCityTribute.WIDTH * .4f)
+                player.xOffset = OwlCityTribute.WIDTH * .4f;
+            cam.position.x = player.getPosition().x + player.xOffset;
+            float leftEdge = player.getPosition().x - (cam.viewportWidth / 2) + player.xOffset;
 
-        if(textBox.readyToUpdate) {
-            if(!textBox.update(dt)) waiting = true;
-            else {
-                waiting = false;
-                if(textCount < sceneText.size()-1 && player.movement > player.maxMovement*.75) {
-                    note.getPosition().x = player.getPosition().x + cam.viewportWidth;
-                    note.setyOffset((int) (Math.random() * 100) + 200);
+            if (!loss && player.getPosition().x < leftEdge) {
+                loss = true;
+                this.gsm.push(new UponLoss(this.gsm));
+            }
+
+            //Check if note is hit
+            if (!shrinking && Math.sqrt(Math.pow((player.getPosition().x + plane.getWidth() * .75f) - note.getPosition().x, 2) + Math.pow((player.getPosition().y + (plane.getHeight() * .75f) / 2) - (note.getPosition().y + noteAnim.getFrame().getRegionHeight() / 2), 2)) < 40) {
+                //Open textbox
+                textCount++;
+                textBox.prepare(sceneText.get(textCount).get(0), sceneText.get(textCount).get(1), .1f);
+                boxInitialized = true;
+
+                //Set bounds
+                int w = (int) font.getBounds(sceneText.get(textCount).get(0)).width;
+                //int h = (int)(font.getBounds(sceneText.get(textCount).get(0)).height*2.5);
+                int h = (int) (font.getBounds(sceneText.get(textCount).get(0)).height * sceneText.get(textCount).size() * 1.5);
+                textBox.setBounds(w, h, (int) (OwlCityTribute.WIDTH * .4) + w / 2, (int) (OwlCityTribute.HEIGHT * .9) - h / 2);
+                waiting = true;
+                shrinking = true;
+            } else if (note.getPosition().x < leftEdge - noteAnim.getFrame().getRegionWidth() && !waiting && textCount < sceneText.size() - 1 && player.movement > player.maxMovement * .75) {
+                note.getPosition().x = player.getPosition().x + cam.viewportWidth;
+                note.setyOffset((int) (Math.random() * 100) + 200);
+            }
+
+            if (shrinking) {
+                noteScale -= 2.5 * dt;
+                if (noteScale < 0) {
+                    shrinking = false;
+                    noteScale = 1f;
+                    note.getPosition().x -= cam.viewportWidth;
                 }
             }
-        }
 
-        if(!readyToFade && boxInitialized && textCount == sceneText.size()-1 && textBox.finished) {
-            zooming = true;
-        }
-
-        //Check sand
-        for(int i = 0; i < sand.size; i++){
-            sand.get(i).update(dt);
-            if(sand.get(i).getPosition().x < leftEdge - sandTexture.getWidth()*1.5){
-                int index = (i == 0) ? sand.size-1 : i-1;
-                sand.get(i).getPosition().x = sand.get(index).getPosition().x + sandTexture.getWidth();
-                break;
+            if (textBox.readyToUpdate) {
+                if (!textBox.update(dt)) waiting = true;
+                else {
+                    waiting = false;
+                    if (textCount < sceneText.size() - 1 && player.movement > player.maxMovement * .75) {
+                        note.getPosition().x = player.getPosition().x + cam.viewportWidth;
+                        note.setyOffset((int) (Math.random() * 100) + 200);
+                    }
+                }
             }
-        }
-        //clouds
-        for(int i= 0; i<clouds.size; i++){
-            clouds.get(i).update(dt);
-            if(clouds.get(i).getPosition().x < -cloud.getWidth()/2) {
-                int index = (i == 0) ? clouds.size-1 : i-1;
-                clouds.get(i).getPosition().x = clouds.get(index).getPosition().x + cam.viewportWidth *.8f;
-                clouds.get(i).yOffset = random.nextInt((int)(OwlCityTribute.HEIGHT*.1f)) + (int)(OwlCityTribute.HEIGHT*.8f);
+
+            if (!readyToFade && boxInitialized && textCount == sceneText.size() - 1 && textBox.finished) {
+                zooming = true;
             }
-        }
-        if(zooming){
-            cam.zoom -= .1*dt;
-            zooming = cam.zoom >=.6;
-            readyToFade = !zooming;
-            if(playerXOffset> player.getPlane().getWidth()/2) playerXOffset -= 50*dt;
-            if(cam.position.y > Gdx.graphics.getHeight()*.05)cam.position.y -= 25*dt;
-        }
 
-        if(readyToFade) {
-            whiteValue = (whiteValue > 0) ? whiteValue - .2f * dt : 0f;
-            if (whiteValue == 0f){
-                dispose();
-                this.gsm.setState(new Sky(this.gsm));
+            //Check sand
+            for (int i = 0; i < sand.size; i++) {
+                sand.get(i).update(dt);
+                if (sand.get(i).getPosition().x < leftEdge - sandTexture.getWidth() * 1.5) {
+                    int index = (i == 0) ? sand.size - 1 : i - 1;
+                    sand.get(i).getPosition().x = sand.get(index).getPosition().x + sandTexture.getWidth();
+                    break;
+                }
             }
-        }
-        else if(whiteValue<1){
-            whiteValue += dt;
-            if(whiteValue > 1f) whiteValue = 1f;
-        }
-
-
-        //Shimmer update
-        for(int i = 0; i < NUM_SHIMMERS; i++){
-            shimmers.get(i).update(dt);
-        }
-
-        //Lights update
-        for(int i = 0; i < NUM_LIGHTS; i++){
-            lights.get(i).update(dt);
-            if(lights.get(i).x < -light.getWidth()) lights.get(i).x = cam.viewportWidth;
-        }
-
-        //Particle update
-        for(int i = 0; i < NUM_PARTICLES; i++){
-            particles.get(i).update(dt);
-            if(particles.get(i).x < leftEdge) particles.get(i).x += cam.viewportWidth;
-            if(particles.get(i).y < 0) {
-                particles.get(i).y = OwlCityTribute.HEIGHT*.675f;
-                particles.get(i).life = 0;
+            //clouds
+            for (int i = 0; i < clouds.size; i++) {
+                clouds.get(i).update(dt);
+                if (clouds.get(i).getPosition().x < -cloud.getWidth() / 2) {
+                    int index = (i == 0) ? clouds.size - 1 : i - 1;
+                    clouds.get(i).getPosition().x = clouds.get(index).getPosition().x + cam.viewportWidth * .8f;
+                    clouds.get(i).yOffset = random.nextInt((int) (OwlCityTribute.HEIGHT * .1f)) + (int) (OwlCityTribute.HEIGHT * .8f);
+                }
             }
-        }
-        if(ripple.finished && boatFluctuation.getPosition().y < boatFluctuation.yOffset - boatFluctuation.range*.95) ripple.finished = ripple.reset(OwlCityTribute.WIDTH*.01f);
-        if(!ripple.finished) ripple.update(dt);
+            if (zooming) {
+                cam.zoom -= .1 * dt;
+                zooming = cam.zoom >= .6;
+                readyToFade = !zooming;
+                if (player.xOffset > player.getPlane().getWidth() / 2) player.xOffset -= 50 * dt;
+                if (cam.position.y > Gdx.graphics.getHeight() * .05) cam.position.y -= 25 * dt;
+            }
 
-        cam.update();
+            if (readyToFade) {
+                whiteValue = (whiteValue > 0) ? whiteValue - .2f * dt : 0f;
+                if (whiteValue == 0f) {
+                    dispose();
+                    gsm.currentState = GameStateManager.SKY;
+                    this.gsm.setState(new Sky(this.gsm));
+                }
+            } else if (whiteValue < 1) {
+                whiteValue += dt;
+                if (whiteValue > 1f) whiteValue = 1f;
+            }
+
+
+            //Shimmer update
+            for (int i = 0; i < NUM_SHIMMERS; i++) {
+                shimmers.get(i).update(dt);
+            }
+
+            //Lights update
+            for (int i = 0; i < NUM_LIGHTS; i++) {
+                lights.get(i).update(dt);
+                if (lights.get(i).x < -light.getWidth()) lights.get(i).x = cam.viewportWidth;
+            }
+
+            //Particle update
+            for (int i = 0; i < NUM_PARTICLES; i++) {
+                particles.get(i).update(dt);
+                if (particles.get(i).x < leftEdge) particles.get(i).x += cam.viewportWidth;
+                if (particles.get(i).y < 0) {
+                    particles.get(i).y = OwlCityTribute.HEIGHT * .675f;
+                    particles.get(i).life = 0;
+                }
+            }
+            if (ripple.finished && boatFluctuation.getPosition().y < boatFluctuation.yOffset - boatFluctuation.range * .95)
+                ripple.finished = ripple.reset(OwlCityTribute.WIDTH * .01f);
+            if (!ripple.finished) ripple.update(dt);
+
+            cam.update();
+        }
     }
 
     @Override
@@ -292,6 +310,7 @@ public class Ocean extends State {
         player.getPlane().dispose();
         plane.dispose();
         shadow.dispose();
+        pauseButton.dispose();
     }
 
     @Override
@@ -299,11 +318,7 @@ public class Ocean extends State {
         sb.setProjectionMatrix(cam.combined);
         sb.begin();
         sb.setColor(whiteValue, whiteValue, whiteValue, 1f);
-        sb.draw(background, player.getPosition().x - cam.viewportWidth / 2 + playerXOffset, 0, cam.viewportWidth, cam.viewportHeight);
-        //Sand
-//        for (FluctuatingObject f : sand){
-//            sb.draw(sandTexture, f.getPosition().x, f.getPosition().y);
-//        }
+        sb.draw(background, player.getPosition().x - cam.viewportWidth / 2 + player.xOffset, 0, cam.viewportWidth, cam.viewportHeight);
         sb.end();
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -313,7 +328,7 @@ public class Ocean extends State {
         //Draw sparkles
         for(int i = 0; i< NUM_SHIMMERS; i++){
             sr.setColor(whiteValue, whiteValue, whiteValue, Math.abs((float) Math.sin(Math.PI * shimmers.get(i).life / Shimmer.MAX_LIFE)));
-            sr.circle(shimmers.get(i).x + player.getPosition().x - cam.viewportWidth/2 + playerXOffset, shimmers.get(i).y,
+            sr.circle(shimmers.get(i).x + player.getPosition().x - cam.viewportWidth/2 + player.xOffset, shimmers.get(i).y,
                     (float)Math.abs(Math.sin(Math.PI * shimmers.get(i).life / Shimmer.MAX_LIFE))*shimmers.get(i).size);
         }
 
@@ -327,20 +342,21 @@ public class Ocean extends State {
         sr.setColor(whiteValue, whiteValue, whiteValue, (float) Math.sin(Math.PI * ripple.life / Ripple.MAX_LIFE));
         //sr.set(ShapeRenderer.ShapeType.Line);
         if(!ripple.finished){
-            sr.circle(player.getPosition().x - cam.viewportWidth/2 + playerXOffset + cam.viewportWidth*.3f, cam.viewportHeight*.7f, ripple.radius);
+            sr.circle(player.getPosition().x - cam.viewportWidth/2 + player.xOffset + cam.viewportWidth*.3f, cam.viewportHeight*.7f, ripple.radius);
         }
         sr.end();
 
         sb.begin();
-        sb.draw(boat, player.getPosition().x - cam.viewportWidth/2 + playerXOffset + cam.viewportWidth*.3f, boatFluctuation.getPosition().y, boat.getWidth()/4, boat.getHeight()/4);
-        sb.draw(boat, player.getPosition().x - cam.viewportWidth / 2 + playerXOffset + cam.viewportWidth * .85f, OwlCityTribute.HEIGHT * .74f, boat.getWidth() / 6, boat.getHeight() / 6);
+        sb.draw(boat, player.getPosition().x - cam.viewportWidth/2 + player.xOffset + cam.viewportWidth*.3f, boatFluctuation.getPosition().y, boat.getWidth()/4, boat.getHeight()/4);
+        sb.draw(boat, player.getPosition().x - cam.viewportWidth / 2 + player.xOffset + cam.viewportWidth * .85f, OwlCityTribute.HEIGHT * .74f, boat.getWidth() / 6, boat.getHeight() / 6);
 
         //clouds
         sb.setColor(whiteValue, whiteValue, whiteValue, .75f);
-        sb.draw(cloud, player.getPosition().x - cam.viewportWidth/2 + playerXOffset + clouds.get(0).getPosition().x, clouds.get(0).getPosition().y, cloud.getWidth()/2,cloud.getHeight()/2);
-        sb.draw(cloud, player.getPosition().x - cam.viewportWidth/2 + playerXOffset + clouds.get(1).getPosition().x, clouds.get(1).getPosition().y, cloud.getWidth()/2,cloud.getHeight()/2);
+        sb.draw(cloud, player.getPosition().x - cam.viewportWidth/2 + player.xOffset + clouds.get(0).getPosition().x, clouds.get(0).getPosition().y, cloud.getWidth()/2,cloud.getHeight()/2);
+        sb.draw(cloud, player.getPosition().x - cam.viewportWidth/2 + player.xOffset + clouds.get(1).getPosition().x, clouds.get(1).getPosition().y, cloud.getWidth()/2,cloud.getHeight()/2);
 
-
+        //Draw pause
+        sb.draw(pauseButton, cam.position.x - cam.viewportWidth/2 + cam.viewportWidth*.05f, cam.viewportHeight*.95f - pauseButton.getHeight());
 
         //Draw text
         if(!textBox.finished) {
@@ -351,7 +367,7 @@ public class Ocean extends State {
             sr.begin();
             sr.set(ShapeRenderer.ShapeType.Filled);
             sr.setColor(whiteValue, whiteValue, whiteValue, (textBox.alpha > .4f) ? .4f : textBox.alpha);
-            float leftEdge = player.getPosition().x - cam.viewportWidth / 2 + playerXOffset;
+            float leftEdge = player.getPosition().x - cam.viewportWidth / 2 + player.xOffset;
             //Vert
             sr.rect(leftEdge + textBox.x - textBox.width / 2 - textBox.padding/2,
                     textBox.y - textBox.height / 2, textBox.width + textBox.padding, textBox.height);
@@ -397,7 +413,7 @@ public class Ocean extends State {
         //Draw lights
         for(int i = 0; i<NUM_LIGHTS; i++){
             sb.setColor(whiteValue, whiteValue, whiteValue, Math.abs((float) Math.sin(Math.PI * lights.get(i).life / Shimmer.MAX_LIFE)));
-            sb.draw(light,lights.get(i).x + player.getPosition().x - cam.viewportWidth/2 + playerXOffset, lights.get(i).y - light.getHeight()*(1f/lights.get(i).size), light.getWidth()*(1f/lights.get(i).size), light.getHeight()*(1f/lights.get(i).size));
+            sb.draw(light,lights.get(i).x + player.getPosition().x - cam.viewportWidth/2 + player.xOffset, lights.get(i).y - light.getHeight()*(1f/lights.get(i).size), light.getWidth()*(1f/lights.get(i).size), light.getHeight()*(1f/lights.get(i).size));
         }
         sb.setColor(whiteValue, whiteValue, whiteValue, .5f);
         sb.end();
@@ -488,10 +504,5 @@ public class Ocean extends State {
             Ripple.this.life = 100;
             return false;
         }
-    }
-
-    @Override
-    public void reload() {
-
     }
 }

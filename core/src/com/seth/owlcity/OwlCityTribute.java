@@ -32,14 +32,15 @@ public class OwlCityTribute extends ApplicationAdapter {
 		loops.get(0).setLooping(false);
 		loops.get(1).setLooping(false);
 		gsm = new GameStateManager();
-		gsm.push(new Beach(gsm));
+		gsm.push(new Menu(gsm));
 		intro.play();
 	}
 
 	@Override
 	public void render () {
 		if(!paused) {
-			Gdx.gl.glClearColor(0, 0, 0, 1);
+			if(gsm.currentState == GameStateManager.SPACE) Gdx.gl.glClearColor(1, 1, 1, 1);
+			else Gdx.gl.glClearColor(0, 0, 0, 1);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 			float deltaTime = Gdx.graphics.getDeltaTime();
 			if(deltaTime != 0) {

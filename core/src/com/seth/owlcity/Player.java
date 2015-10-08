@@ -17,6 +17,7 @@ public class Player {
     public float rotation;
     private float upperLimit;
     private float lowerLimit;
+    public float xOffset;
     public boolean blown;
     public Player(int w, int h, float ul, float ll){
         position = new Vector2(w/2, h/2);
@@ -29,6 +30,7 @@ public class Player {
         lowerLimit = ll;
         blown = false;
         gravity = -5;
+        xOffset = OwlCityTribute.WIDTH*.4f;
     }
 
     public void update(float dt){

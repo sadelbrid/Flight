@@ -14,16 +14,19 @@ public abstract class State {
     protected Vector2 mouse;
     protected GameStateManager gsm;
     protected ArrayList<ArrayList<String>> sceneText;
+    public boolean paused;
+    protected boolean loss;
     public State(GameStateManager gsm){
         this.gsm = gsm;
         cam = new OrthographicCamera();
         mouse = new Vector2();
         sceneText = new ArrayList<ArrayList<String>>();
+        paused = false;
+        loss = false;
     }
 
     protected abstract void handleInput();
     public abstract void render(SpriteBatch sb);
     public abstract void update(float dt);
     public abstract void dispose();
-    public abstract void reload();
 }

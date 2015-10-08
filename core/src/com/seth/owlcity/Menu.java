@@ -26,6 +26,7 @@ public class Menu extends State {
     private Texture cloud;
     private Texture title;
     private Texture plane;
+    private Texture shadow;
     private ShapeRenderer sr;
     private float whitevalue;
     private float whiteOverlay;
@@ -40,7 +41,7 @@ public class Menu extends State {
         cloud = new Texture("cloud.png");
         title = new Texture("title.png");
         plane = new Texture("plane.png");
-
+        shadow = new Texture("shadow.png");
         random = new Random(System.currentTimeMillis());
         shimmers = new Array<Shimmer>();
         for(int i = 0; i < NUM_SHIMMERS; i++){
@@ -84,6 +85,7 @@ public class Menu extends State {
             if(whitevalue < 0) whitevalue = 0;
             if(whitevalue == 0) {
                 dispose();
+                gsm.currentState = GameStateManager.BEACH;
                 gsm.setState(new Beach(gsm));
             }
         }
@@ -115,6 +117,7 @@ public class Menu extends State {
         sb.draw(cloud, clouds.get(0).getPosition().x, clouds.get(0).getPosition().y);
         sb.draw(cloud, clouds.get(1).getPosition().x, clouds.get(1).getPosition().y);
         sb.draw(title, OwlCityTribute.WIDTH/2 - title.getWidth()/2, OwlCityTribute.HEIGHT*.6f - title.getHeight()/2);
+        sb.draw(shadow, OwlCityTribute.WIDTH /2 - shadow.getWidth()/2 - plane.getWidth()*.1f, OwlCityTribute.HEIGHT*.12f - shadow.getHeight()/2);
         sb.draw(plane, OwlCityTribute.WIDTH*.5f - plane.getWidth()/2, OwlCityTribute.HEIGHT*.09f, 0, 0, plane.getWidth(), plane.getHeight(),
                 1, 1, 5, 0, 0, plane.getWidth(), plane.getHeight(), false, false);
         sb.end();
@@ -155,6 +158,7 @@ public class Menu extends State {
         cloud.dispose();
         title.dispose();
         plane.dispose();
+        shadow.dispose();
     }
 
     private class Shimmer{
@@ -173,8 +177,5 @@ public class Menu extends State {
         public void update(float dt){
             Shimmer.this.life += 75*dt;
         }
-    }
-    @Override
-    public void reload() {
     }
 }

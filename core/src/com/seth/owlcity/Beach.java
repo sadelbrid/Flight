@@ -29,6 +29,7 @@ public class Beach extends State {
     private Texture waterTexture;
     private Texture cloud;
     private Texture shadow;
+    private Texture pauseButton;
     private float playerXOffset;
     private float femaleXOffset;
     private Array<FluctuatingObject> sand;
@@ -70,6 +71,7 @@ public class Beach extends State {
         vignette = new Texture("vignette.png");
         cloud = new Texture("cloud.png");
         shadow = new Texture("shadow.png");
+        pauseButton = new Texture("pause.png");
         playerXOffset = OwlCityTribute.WIDTH*.4f;
 
         textCount = -1;
@@ -153,156 +155,169 @@ public class Beach extends State {
 
     @Override
     protected void handleInput() {
-        if(!intro && Gdx.input.justTouched() && textCount < sceneText.size()-1) player.lift();
+        if(Gdx.input.justTouched() && textCount < sceneText.size()-1) {
+            if(Gdx.input.getX() < Gdx.graphics.getWidth()*.05f + pauseButton.getWidth()*Gdx.graphics.getDensity() &&
+                    Gdx.input.getY() > Gdx.graphics.getHeight()*.05f - pauseButton.getHeight()*Gdx.graphics.getDensity()){
+                gsm.push(new Pause(gsm));
+                paused = true;
+            }
+            else if(!intro) player.lift();
+        }
     }
 
     @Override
     public void update(float dt) {
-        player.update(dt);
-        if(intro){
-            female.update(dt);
-            femaleXOffset -= femaleOffsetSpeed*dt;
-            if(femaleXOffset < -cam.viewportWidth/2){
-                //intro = false;
-                note = new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth), 2f, 200, 50, -200);
-                adjusting = true;
-                playerXOffset = cam.position.x - player.getPosition().x;
-            }
-            leftEdge = female.getPosition().x - (cam.viewportWidth/2) + femaleXOffset;
-            if(adjusting){
-                playerXOffset += 20*dt;
-                if(playerXOffset > OwlCityTribute.WIDTH*.4){
-                    playerXOffset = OwlCityTribute.WIDTH*.4f;
-                    adjusting = false;
-                    intro = false;
+        if(!paused) {
+            player.update(dt);
+            if (intro) {
+                female.update(dt);
+                femaleXOffset -= femaleOffsetSpeed * dt;
+                if (femaleXOffset < -cam.viewportWidth / 2) {
+                    //intro = false;
+                    note = new FluctuatingObject((int) (player.getPosition().x + cam.viewportWidth), 2f, 200, 50, -200);
+                    adjusting = true;
+                    player.xOffset = cam.position.x - player.getPosition().x;
+                    player.xOffset = cam.position.x - player.getPosition().x;
                 }
-            }
-            cam.position.x = female.getPosition().x + femaleXOffset;
-        }
-        else{
-            note.update(dt);
-            noteAnim.update(dt);
-            noteRotation += 100f*dt;
-            if(noteRotation > 360) noteRotation = 0;
-            leftEdge = player.getPosition().x - (cam.viewportWidth/2) + playerXOffset;
-            //Player Offset
-            if(player.movement < player.maxMovement/2){
-                playerXOffset += 10*dt;
-            }
-            else{
-                playerXOffset -= 20*dt;
-            }
-            if(playerXOffset < OwlCityTribute.WIDTH*.4f) playerXOffset = OwlCityTribute.WIDTH*.4f;
-            cam.position.x = player.getPosition().x + playerXOffset;
-
-            //Check if note is hit
-            if(!shrinking && Math.sqrt(Math.pow((player.getPosition().x + player.getPlane().getWidth()*.75f) - note.getPosition().x, 2) + Math.pow((player.getPosition().y + (player.getPlane().getHeight()*.75f)/2) - (note.getPosition().y + noteAnim.getFrame().getRegionHeight()/2), 2)) < 40){
-                //Open textbox
-                textCount++;
-                textBox.prepare(sceneText.get(textCount).get(0), sceneText.get(textCount).get(1), .1f);
-                boxInitialized = true;
-
-                //Set bounds
-                int w =  (int)font.getBounds(sceneText.get(textCount).get(0)).width;
-                int h = (int)(font.getBounds(sceneText.get(textCount).get(0)).height*2.5);
-                textBox.setBounds(w, h, (int)(OwlCityTribute.WIDTH*.65) - w/2, (int)(OwlCityTribute.HEIGHT*.75)-h/2);
-                waiting = true;
-                shrinking = true;
-            }
-            else if(note.getPosition().x < leftEdge - noteAnim.getFrame().getRegionWidth() && !waiting && textCount < sceneText.size()-1 && player.movement > player.maxMovement*.75){
-                note.getPosition().x = player.getPosition().x + cam.viewportWidth;
-                note.setyOffset((int) (Math.random() * 100) + 200);
-            }
-
-            if(shrinking) {
-                noteScale -=2.5*dt;
-                if(noteScale < 0){
-                    shrinking = false;
-                    noteScale = 1f;
-                    note.getPosition().x -= cam.viewportWidth;
+                leftEdge = female.getPosition().x - (cam.viewportWidth / 2) + femaleXOffset;
+                if (adjusting) {
+                    player.xOffset += 20 * dt;
+                    if (player.xOffset > OwlCityTribute.WIDTH * .4) {
+                        player.xOffset = OwlCityTribute.WIDTH * .4f;
+                        adjusting = false;
+                        intro = false;
+                    }
                 }
-            }
+                cam.position.x = female.getPosition().x + femaleXOffset;
+            } else {
+                note.update(dt);
+                noteAnim.update(dt);
+                noteRotation += 100f * dt;
+                if (noteRotation > 360) noteRotation = 0;
+                leftEdge = player.getPosition().x - (cam.viewportWidth / 2) + player.xOffset;
+                //Player Offset
+                if (player.movement < player.maxMovement / 2) {
+                    player.xOffset += 10 * dt;
+                } else {
+                    player.xOffset -= 20 * dt;
+                }
+                if (player.xOffset < OwlCityTribute.WIDTH * .4f)
+                    player.xOffset = OwlCityTribute.WIDTH * .4f;
+                cam.position.x = player.getPosition().x + player.xOffset;
 
-        }
+                if (!loss && player.getPosition().x < leftEdge) {
+                    loss = true;
+                    this.gsm.push(new UponLoss(this.gsm));
+                }
 
-        handleInput();
+                //Check if note is hit
+                if (!shrinking && Math.sqrt(Math.pow((player.getPosition().x + player.getPlane().getWidth() * .75f) - note.getPosition().x, 2) + Math.pow((player.getPosition().y + (player.getPlane().getHeight() * .75f) / 2) - (note.getPosition().y + noteAnim.getFrame().getRegionHeight() / 2), 2)) < 40) {
+                    //Open textbox
+                    textCount++;
+                    textBox.prepare(sceneText.get(textCount).get(0), sceneText.get(textCount).get(1), .1f);
+                    boxInitialized = true;
 
-
-        for(int i = 0; i < NUM_SHIMMERS; i++){
-            shimmers.get(i).update(dt);
-        }
-
-        if(textBox.readyToUpdate) {
-            if(!textBox.update(dt)) waiting = true;
-            else {
-                waiting = false;
-                if(textCount < sceneText.size()-1 && player.movement > player.maxMovement*.75) {
+                    //Set bounds
+                    int w = (int) font.getBounds(sceneText.get(textCount).get(0)).width;
+                    int h = (int) (font.getBounds(sceneText.get(textCount).get(0)).height * 2.5);
+                    textBox.setBounds(w, h, (int) (OwlCityTribute.WIDTH * .65) - w / 2, (int) (OwlCityTribute.HEIGHT * .75) - h / 2);
+                    waiting = true;
+                    shrinking = true;
+                } else if (note.getPosition().x < leftEdge - noteAnim.getFrame().getRegionWidth() && !waiting && textCount < sceneText.size() - 1 && player.movement > player.maxMovement * .75) {
                     note.getPosition().x = player.getPosition().x + cam.viewportWidth;
                     note.setyOffset((int) (Math.random() * 100) + 200);
                 }
-            }
-        }
 
-        if(!readyToFade && boxInitialized && textCount == sceneText.size()-1 && textBox.finished) {
-            zooming = true;
-        }
-
-        //Check water background
-        for(int i = 0; i < waterBackground.size; i++){
-            waterBackground.get(i).update(dt);
-            if(waterBackground.get(i).getPosition().x < leftEdge - waterTexture.getWidth()){
-                int index = (i == 0) ? waterBackground.size-1 : i-1;
-                waterBackground.get(i).getPosition().x = waterBackground.get(index).getPosition().x + waterTexture.getWidth();
-                break;
-            }
-        }
-        //Check water foreground
-        for(int i = 0; i < waterForeground.size; i++){
-            waterForeground.get(i).update(dt);
-            if(waterForeground.get(i).getPosition().x < leftEdge - waterTexture.getWidth()){
-                int index = (i == 0) ? waterForeground.size-1 : i-1;
-                waterForeground.get(i).getPosition().x = waterForeground.get(index).getPosition().x + waterTexture.getWidth();
-                break;
+                if (shrinking) {
+                    noteScale -= 2.5 * dt;
+                    if (noteScale < 0) {
+                        shrinking = false;
+                        noteScale = 1f;
+                        note.getPosition().x -= cam.viewportWidth;
+                    }
+                }
 
             }
-        }
-        //Check sand
-        for(int i = 0; i < sand.size; i++){
-            sand.get(i).update(dt);
-            if(sand.get(i).getPosition().x < leftEdge - sandTexture.getWidth()){
-                int index = (i == 0) ? sand.size-1 : i-1;
-                sand.get(i).getPosition().x = sand.get(index).getPosition().x + sandTexture.getWidth();
-                break;
-            }
-        }
-        //clouds
-        for(int i= 0; i<clouds.size; i++){
-            clouds.get(i).update(dt);
-            if(clouds.get(i).getPosition().x < leftEdge - cloud.getWidth()) {
-                int index = (i == 0) ? clouds.size-1 : i-1;
-                clouds.get(i).getPosition().x = (float)(clouds.get(index).getPosition().x + cam.viewportWidth*.8);
-            }
-        }
 
-        if(zooming){
-            cam.zoom -= .1*dt;
-            zooming = cam.zoom >=.6;
-            readyToFade = !zooming;
-            if(playerXOffset> player.getPlane().getWidth()/2) playerXOffset -= 50*dt;
-            if(cam.position.y > Gdx.graphics.getHeight()*.05)cam.position.y -= 25*dt;
-        }
-        if(readyToFade){
-            whiteValue  = (whiteValue > 0) ? whiteValue - .2f*dt : 0f;
-            if (whiteValue == 0){
-                dispose();
-                this.gsm.setState(new Ocean(this.gsm));
-            }
-        }
-        else{
-            whiteValue = (whiteValue < 1f) ? whiteValue+.2f*dt : 1f;
-        }
+            handleInput();
 
-        cam.update();
+
+            for (int i = 0; i < NUM_SHIMMERS; i++) {
+                shimmers.get(i).update(dt);
+            }
+
+            if (textBox.readyToUpdate) {
+                if (!textBox.update(dt)) waiting = true;
+                else {
+                    waiting = false;
+                    if (textCount < sceneText.size() - 1 && player.movement > player.maxMovement * .75) {
+                        note.getPosition().x = player.getPosition().x + cam.viewportWidth;
+                        note.setyOffset((int) (Math.random() * 100) + 200);
+                    }
+                }
+            }
+
+            if (!readyToFade && boxInitialized && textCount == sceneText.size() - 1 && textBox.finished) {
+                zooming = true;
+            }
+
+            //Check water background
+            for (int i = 0; i < waterBackground.size; i++) {
+                waterBackground.get(i).update(dt);
+                if (waterBackground.get(i).getPosition().x < leftEdge - waterTexture.getWidth()) {
+                    int index = (i == 0) ? waterBackground.size - 1 : i - 1;
+                    waterBackground.get(i).getPosition().x = waterBackground.get(index).getPosition().x + waterTexture.getWidth();
+                    break;
+                }
+            }
+            //Check water foreground
+            for (int i = 0; i < waterForeground.size; i++) {
+                waterForeground.get(i).update(dt);
+                if (waterForeground.get(i).getPosition().x < leftEdge - waterTexture.getWidth()) {
+                    int index = (i == 0) ? waterForeground.size - 1 : i - 1;
+                    waterForeground.get(i).getPosition().x = waterForeground.get(index).getPosition().x + waterTexture.getWidth();
+                    break;
+
+                }
+            }
+            //Check sand
+            for (int i = 0; i < sand.size; i++) {
+                sand.get(i).update(dt);
+                if (sand.get(i).getPosition().x < leftEdge - sandTexture.getWidth()) {
+                    int index = (i == 0) ? sand.size - 1 : i - 1;
+                    sand.get(i).getPosition().x = sand.get(index).getPosition().x + sandTexture.getWidth();
+                    break;
+                }
+            }
+            //clouds
+            for (int i = 0; i < clouds.size; i++) {
+                clouds.get(i).update(dt);
+                if (clouds.get(i).getPosition().x < leftEdge - cloud.getWidth()) {
+                    int index = (i == 0) ? clouds.size - 1 : i - 1;
+                    clouds.get(i).getPosition().x = (float) (clouds.get(index).getPosition().x + cam.viewportWidth * .8);
+                }
+            }
+
+            if (zooming) {
+                cam.zoom -= .1 * dt;
+                zooming = cam.zoom >= .6;
+                readyToFade = !zooming;
+                if (player.xOffset > player.getPlane().getWidth() / 2) player.xOffset -= 50 * dt;
+                if (cam.position.y > Gdx.graphics.getHeight() * .05) cam.position.y -= 25 * dt;
+            }
+            if (readyToFade) {
+                whiteValue = (whiteValue > 0) ? whiteValue - .2f * dt : 0f;
+                if (whiteValue == 0) {
+                    dispose();
+                    gsm.currentState = GameStateManager.OCEAN;
+                    this.gsm.setState(new Ocean(this.gsm));
+                }
+            } else {
+                whiteValue = (whiteValue < 1f) ? whiteValue + .2f * dt : 1f;
+            }
+
+            cam.update();
+        }
     }
 
     @Override
@@ -316,6 +331,7 @@ public class Beach extends State {
         sr.dispose();
         player.getPlane().dispose();
         shadow.dispose();
+        pauseButton.dispose();
     }
 
     @Override
@@ -339,6 +355,9 @@ public class Beach extends State {
         sr.end();
 
         sb.begin();
+        //Draw pause
+        sb.draw(pauseButton, cam.position.x - cam.viewportWidth/2 + cam.viewportWidth*.05f, cam.viewportHeight*.95f - pauseButton.getHeight());
+
         //Draw text
         if(!textBox.finished) {
             sb.end();
@@ -435,9 +454,5 @@ public class Beach extends State {
         public void update(float dt){
             Shimmer.this.life += 75*dt;
         }
-    }
-    @Override
-    public void reload() {
-        planeRegion = new TextureRegion(player.getPlane());
     }
 }
