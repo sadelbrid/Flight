@@ -2,6 +2,7 @@ package com.seth.owlcity;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -15,25 +16,32 @@ public class OwlCityTribute extends ApplicationAdapter {
 	GameStateManager gsm;
 	public static final int WIDTH = 800;
 	public static final int HEIGHT = 480;
-	public static Music intro;
-	public static Array<Music> loops;
+	public static Music promenade;
 	public static boolean paused;
-	public static float introTime, loopOneTime, loopTwoTime;
+	public static final String GAME_PREFS = "flightPreferences";
 	
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
 		paused = false;
-		introTime = loopOneTime = loopTwoTime = 0f;
-		intro = Gdx.audio.newMusic(Gdx.files.internal("intro.mp3"));
-		loops = new Array<Music>();
-		loops.add(Gdx.audio.newMusic(Gdx.files.internal("loop2.mp3")));
-		loops.add(Gdx.audio.newMusic(Gdx.files.internal("loop2.mp3")));
-		loops.get(0).setLooping(false);
-		loops.get(1).setLooping(false);
+		promenade = Gdx.audio.newMusic(Gdx.files.internal("promenade.mp3"));
+		promenade.setLooping(true);
+
+		Preferences prefs = Gdx.app.getPreferences(GAME_PREFS);
+		if(!prefs.contains("level")){
+			prefs.putInteger("level", 1);
+			prefs.flush();
+		}
+
+		if(!prefs.contains("maxlevel")){
+			prefs.putInteger("maxlevel", 1);
+			prefs.flush();
+		}
+
 		gsm = new GameStateManager();
-		gsm.push(new Menu(gsm));
-		intro.play();
+		gsm.currentState = GameStateManager.GRASSLAND;
+		gsm.push(new Grassland(gsm));
+		promenade.play();
 	}
 
 	@Override
@@ -52,10 +60,9 @@ public class OwlCityTribute extends ApplicationAdapter {
 
 	@Override
 	public void dispose(){
+		promenade.dispose();
+		batch.dispose();
 		super.dispose();
-		intro.dispose();
-		loops.get(0).dispose();
-		loops.get(1).dispose();
 	}
 
 	@Override

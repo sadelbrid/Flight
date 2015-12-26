@@ -1,6 +1,7 @@
 package com.seth.owlcity;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -74,7 +75,7 @@ public class Beach extends State {
         pauseButton = new Texture("pause.png");
         playerXOffset = OwlCityTribute.WIDTH*.4f;
 
-        textCount = -1;
+        textCount = 4;
         sand = new Array<FluctuatingObject>();
         noteAnim = new Animation(new TextureRegion(new Texture("paper.png")), 9, .5f);
         planeRegion = new TextureRegion(player.getPlane());
@@ -156,8 +157,12 @@ public class Beach extends State {
     @Override
     protected void handleInput() {
         if(Gdx.input.justTouched() && textCount < sceneText.size()-1) {
-            if(Gdx.input.getX() < Gdx.graphics.getWidth()*.05f + pauseButton.getWidth()*Gdx.graphics.getDensity() &&
-                    Gdx.input.getY() > Gdx.graphics.getHeight()*.05f - pauseButton.getHeight()*Gdx.graphics.getDensity()){
+            float scaleX = Gdx.graphics.getWidth()/OwlCityTribute.WIDTH;
+            float scaleY = Gdx.graphics.getHeight()/OwlCityTribute.HEIGHT;
+            float x = Gdx.input.getX()/scaleX;
+            float y = Gdx.input.getY()/scaleY;
+            if(x < cam.viewportWidth*.05f + pauseButton.getWidth() &&
+                    y < cam.viewportHeight*.05f + pauseButton.getHeight()){
                 gsm.push(new Pause(gsm));
                 paused = true;
             }
@@ -196,13 +201,15 @@ public class Beach extends State {
                 if (noteRotation > 360) noteRotation = 0;
                 leftEdge = player.getPosition().x - (cam.viewportWidth / 2) + player.xOffset;
                 //Player Offset
-                if (player.movement < player.maxMovement / 2) {
-                    player.xOffset += 10 * dt;
-                } else {
-                    player.xOffset -= 20 * dt;
+                if(textCount < sceneText.size()-1) {
+                    if (player.movement < player.maxMovement / 2) {
+                        player.xOffset += 10 * dt;
+                    } else {
+                        player.xOffset -= 20 * dt;
+                    }
+                    if (player.xOffset < OwlCityTribute.WIDTH * .4f)
+                        player.xOffset = OwlCityTribute.WIDTH * .4f;
                 }
-                if (player.xOffset < OwlCityTribute.WIDTH * .4f)
-                    player.xOffset = OwlCityTribute.WIDTH * .4f;
                 cam.position.x = player.getPosition().x + player.xOffset;
 
                 if (!loss && player.getPosition().x < leftEdge) {
@@ -309,6 +316,12 @@ public class Beach extends State {
                 whiteValue = (whiteValue > 0) ? whiteValue - .2f * dt : 0f;
                 if (whiteValue == 0) {
                     dispose();
+                    Preferences p = Gdx.app.getPreferences(OwlCityTribute.GAME_PREFS);
+                    p.putInteger("level", 2);
+                    if(p.getInteger("maxlevel") < 2){
+                        p.putInteger("maxlevel", 2);
+                    }
+                    p.flush();
                     gsm.currentState = GameStateManager.OCEAN;
                     this.gsm.setState(new Ocean(this.gsm));
                 }
@@ -386,7 +399,7 @@ public class Beach extends State {
 
 
         //clouds
-        sb.setColor(whiteValue,whiteValue,whiteValue, .75f);
+        sb.setColor(whiteValue,whiteValue,whiteValue, .55f);
         sb.draw(cloud, clouds.get(0).getPosition().x, clouds.get(0).getPosition().y);
         sb.draw(cloud, clouds.get(1).getPosition().x, clouds.get(1).getPosition().y);
         //Water bg

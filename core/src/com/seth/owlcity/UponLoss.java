@@ -60,6 +60,12 @@ public class UponLoss extends State {
                 case GameStateManager.SPACE:
                     gsm.setState(new Space(gsm));
                     break;
+                case GameStateManager.CITY:
+                    gsm.setState(new City(gsm));
+                    break;
+                case GameStateManager.GRASSLAND:
+                    gsm.setState(new Grassland(gsm));
+                    break;
             }
         }
 

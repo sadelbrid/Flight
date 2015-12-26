@@ -43,7 +43,6 @@ public class Space extends State {
     private boolean waiting;
     private boolean zooming;
     private float whiteValue;
-    //private boolean readyToFadeBlack;
     private boolean readyToFadeWhite;
     private boolean boxInitialized;
     private boolean fallen;
@@ -75,22 +74,25 @@ public class Space extends State {
         clouds.add(new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth*.7), 0f, -(int)(OwlCityTribute.HEIGHT*.15f), 0, -1));
         sr = new ShapeRenderer();
         noteRotation = 0f;
-        for(int i = 0; i < 5; i++) this.sceneText.add(new ArrayList<String>());
+        for(int i = 0; i < 6; i++) this.sceneText.add(new ArrayList<String>());
 
         sceneText.get(0).add("We didn't stop at the sky when");
         sceneText.get(0).add("there's footprints on the moon");
 
-        sceneText.get(1).add("Gravity tried to");
-        sceneText.get(1).add("bring us down.");
+        sceneText.get(1).add("We longed to live in between");
+        sceneText.get(1).add("the Earth and the stars");
 
-        sceneText.get(2).add("But our heavy wings");
-        sceneText.get(2).add("grew lighter");
+        sceneText.get(2).add("Gravity tried to");
+        sceneText.get(2).add("bring us down.");
 
-        sceneText.get(3).add("so we kissed the");
-        sceneText.get(3).add("planet goodbye.");
+        sceneText.get(3).add("But our heavy wings");
+        sceneText.get(3).add("grew lighter");
 
-        sceneText.get(4).add("and we followed the only");
-        sceneText.get(4).add("North Star.");
+        sceneText.get(4).add("so we kissed the");
+        sceneText.get(4).add("planet goodbye.");
+
+        sceneText.get(5).add("and we followed the only");
+        sceneText.get(5).add("North Star.");
 
         parameter.size = 20;
         parameter.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.";
@@ -125,8 +127,12 @@ public class Space extends State {
     @Override
     protected void handleInput() {
         if(Gdx.input.justTouched() && !readyToFadeWhite && !fallen) {
-            if(Gdx.input.getX() < Gdx.graphics.getWidth()*.05f + pauseButton.getWidth()*Gdx.graphics.getDensity() &&
-                    Gdx.input.getY() > Gdx.graphics.getHeight()*.05f - pauseButton.getHeight()*Gdx.graphics.getDensity()){
+            float scaleX = Gdx.graphics.getWidth()/OwlCityTribute.WIDTH;
+            float scaleY = Gdx.graphics.getHeight()/OwlCityTribute.HEIGHT;
+            float x = Gdx.input.getX()/scaleX;
+            float y = Gdx.input.getY()/scaleY;
+            if(x < cam.viewportWidth*.05f + pauseButton.getWidth() &&
+                    y < cam.viewportHeight*.05f + pauseButton.getHeight()){
                 gsm.push(new Pause(gsm));
                 paused = true;
             }
@@ -146,11 +152,12 @@ public class Space extends State {
                 float temp = player.normalize(-450, 200, (float) -Math.PI / 4f, (float) Math.PI / 4f, player.getVelocity().y);
                 player.rotation = 25 * (float) Math.sin(temp);
                 player.xOffset -= 50 * dt;
-            } else if (whiteOverlay <= 0f)
+            }
+            else if (whiteOverlay == 0f)
                 player.update(dt); //So player can be controlled upward from Sky
             else {
                 //Lift player
-                whiteOverlay -= .275f * dt;
+                whiteOverlay = (whiteOverlay > .275f*dt) ? whiteOverlay - .275f*dt : 0f;
                 player.getVelocity().add(0, -player.gravity * .17f);
                 player.getVelocity().scl(dt);
                 player.getPosition().add(player.movement * dt, player.getVelocity().y);
@@ -160,14 +167,14 @@ public class Space extends State {
 
             }
 
-            if (whiteOverlay > 1) {
+            if (whiteOverlay == 1) {
                 dispose();
                 this.gsm.setState(new Credits(this.gsm));
             }
 
             //Finish
             if (finished && textBox.finished && player.getPosition().y > OwlCityTribute.HEIGHT + player.getPlane().getHeight())
-                whiteOverlay += .35 * dt;
+                whiteOverlay = (whiteOverlay < 1 - .35*dt) ? whiteOverlay + .35f * dt : 1f;
 
             //Female
             femaleControlled.MOVEMENT = player.movement;
@@ -243,21 +250,7 @@ public class Space extends State {
                 }
             }
 
-//        if(readyToFadeBlack){
-//            whiteValue  = (whiteValue > 0) ? whiteValue - .2f*dt : 0f;
-//            if(whiteValue == 0f){
-//                if(player.getPosition().y == -OwlCityTribute.HEIGHT*.1f){
-//                    dispose();
-//                    if(!finished) {
-//                        this.gsm.setState(new Space(this.gsm));
-//                    }
-//                }
-//            }
-//            if(whiteOverlay > 1 && textCount == sceneText.size()-1) this.gsm.setState(new Menu(gsm));
-//        }
-            //else{
-            whiteValue = (whiteValue < 1f && !finished) ? whiteValue + .4f * dt : 1f;
-            //}
+            //whiteValue = (whiteValue < 1f-.4f*dt && !finished) ? whiteValue + .4f * dt : 1f;
 
             //Shimmer update
             for (int i = 0; i < NUM_SHIMMERS; i++) {

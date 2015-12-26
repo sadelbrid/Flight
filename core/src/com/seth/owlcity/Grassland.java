@@ -2,7 +2,6 @@ package com.seth.owlcity;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -17,17 +16,17 @@ import java.util.ArrayList;
 import java.util.Random;
 
 /**
- * Created by Seth on 8/27/15.
+ * Created by Seth on 12/13/15.
  */
-public class Sky extends State {
+public class Grassland extends State{
     private static final int NUM_SHIMMERS = 30;
     private Player player;
     private Texture vignette;
     private Texture background;
     private Texture cloud;
     private Texture pauseButton;
-
-    //private float playerXOffset;
+    private Texture balloon;
+    private Texture brush;
     private Array<FluctuatingObject> clouds;
     private Array<Shimmer> shimmers;
 
@@ -35,6 +34,7 @@ public class Sky extends State {
     private ShapeRenderer sr;
     private TextureRegion planeRegion;
     private FluctuatingObject note;
+    private FluctuatingObject balloonFluctuation;
     private FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("corbel.ttf"));
     private FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
     private BitmapFont font;
@@ -48,55 +48,57 @@ public class Sky extends State {
     private boolean boxInitialized;
     private boolean fallen;
     private Random random;
-    private float whiteOverlay;
+    private float whiteOverlay = 0f;
     private float noteScale;
     private boolean shrinking;
-    boolean intro;
-    public Sky(GameStateManager gsm){
+    private Array<FluctuatingObject> brushmoving;
+    public Grassland(GameStateManager gsm){
         super(gsm);
         cam.setToOrtho(false, OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT);
         player = new Player(OwlCityTribute.WIDTH, OwlCityTribute.HEIGHT, OwlCityTribute.HEIGHT, -OwlCityTribute.HEIGHT*.1f);
-        player.getPosition().y = -OwlCityTribute.HEIGHT*.1f;
-        background = new Texture("skybg.png");
+        player.getPosition().y = OwlCityTribute.HEIGHT;
+        background = new Texture("grass.png");
         vignette = new Texture("vignette.png");
         cloud = new Texture("cloud.png");
         pauseButton = new Texture("pause.png");
-        //playerXOffset = OwlCityTribute.WIDTH*.4f;
-        textCount = 3;
+        balloon = new Texture("balloon.png");
+        brush = new Texture("brush.png");
+
+
+        textCount = -1;
         note = new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth), 2f, 200, 50, -250);
         noteAnim = new Animation(new TextureRegion(new Texture("paper.png")), 9, .5f);
         planeRegion = new TextureRegion(player.getPlane());
 
         clouds = new Array<FluctuatingObject>();
-        clouds.add(new FluctuatingObject((int)(player.getPosition().x - cam.viewportWidth*.1), 0f, -(int)(OwlCityTribute.HEIGHT*.1f), 0, -1));
-        clouds.add(new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth*.7), 0f, -(int)(OwlCityTribute.HEIGHT*.1f), 0, -1));
+        clouds.add(new FluctuatingObject((int)(player.getPosition().x - cam.viewportWidth*.1), 0f, (int)(OwlCityTribute.HEIGHT*.8f), 0, -1));
+        clouds.add(new FluctuatingObject((int)(player.getPosition().x + cam.viewportWidth*.7), 0f, (int)(OwlCityTribute.HEIGHT*.8f), 0, -1));
         sr = new ShapeRenderer();
         noteRotation = 0f;
-        for(int i = 0; i < 5; i++) this.sceneText.add(new ArrayList<String>());
-        sceneText.get(0).add("I dreamt we were");
-        sceneText.get(0).add("above the blue.");
+        for(int i = 0; i < 4; i++) this.sceneText.add(new ArrayList<String>());
 
-        sceneText.get(1).add("and I was right beside you");
-        sceneText.get(1).add("floating away.");
+        sceneText.get(0).add("The open summer breeze swept");
+        sceneText.get(0).add("us through the hills.");
 
-        sceneText.get(2).add("The Earth didn't care");
-        sceneText.get(2).add("that we were up there.");
+        sceneText.get(1).add("There was endless sky with");
+        sceneText.get(1).add("the evening around us");
 
-        sceneText.get(3).add("The world looked brighter");
-        sceneText.get(3).add("from that high altitude.");
+        sceneText.get(2).add("Everywhere we looked we saw");
+        sceneText.get(2).add("green, scenic sublime");
 
-        sceneText.get(4).add("We could go anywhere.");
+        sceneText.get(3).add("And cold nostalgia chilled");
+        sceneText.get(3).add("us in the warm air");
 
         parameter.size = 20;
-        parameter.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.";
+        parameter.characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.,";
 
         font = generator.generateFont(parameter);
         generator.dispose();
+
         textBox = new TextBox();
         sr = new ShapeRenderer();
         waiting = false;
-        whiteValue = 1f;
-        whiteOverlay = .99f;
+        whiteValue = 0f;
         //readyToFadeBlack = false;
         boxInitialized = false;
 
@@ -112,7 +114,14 @@ public class Sky extends State {
         fallen = false;
         noteScale = 1f;
         shrinking = false;
-        intro = true;
+
+        balloonFluctuation = new FluctuatingObject((int)(OwlCityTribute.WIDTH * .75), .75f,
+                (int)(OwlCityTribute.HEIGHT*.8f), (int)(OwlCityTribute.HEIGHT*.025), 0);
+
+        brushmoving = new Array<FluctuatingObject>();
+        for(int i = 0; i<3; i++){
+            brushmoving.add(new FluctuatingObject(i*brush.getWidth() + (int)(player.getPosition().x - cam.viewportWidth / 2 + player.xOffset), 0, -(int)(OwlCityTribute.HEIGHT*.15), 0, 0));
+        }
     }
 
     @Override
@@ -135,42 +144,31 @@ public class Sky extends State {
     public void update(float dt) {
         if(!paused) {
             handleInput();
-            if(intro){
-                //Lift player
-                player.getVelocity().add(0, -player.gravity / 2);
-                player.getVelocity().scl(dt);
-                player.getPosition().add(player.movement * dt, player.getVelocity().y);
-                player.getVelocity().scl(1 / dt);
-                float temp = player.normalize(-450, 200, (float) -Math.PI / 4f, (float) Math.PI / 4f, player.getVelocity().y);
-                player.rotation = 25 * (float) Math.sin(temp);
-                whiteOverlay -= .5f * dt;
-                intro = whiteOverlay > 0;
-            }
-            else if (!readyToFadeWhite) player.update(dt); //So player can be controlled upward from Sky
+            if (!readyToFadeWhite) player.update(dt); //So player can be controlled upward from Sky
             else {
                 //Lift player
-                whiteOverlay = (whiteOverlay < 1 - .3f*dt) ? whiteOverlay + .3f * dt : 1f;
+                whiteOverlay += .3f * dt;
                 player.getVelocity().add(0, -player.gravity / 2);
                 player.getVelocity().scl(dt);
                 player.getPosition().add(player.movement * dt, player.getVelocity().y);
                 player.getVelocity().scl(1 / dt);
                 float temp = player.normalize(-450, 200, (float) -Math.PI / 4f, (float) Math.PI / 4f, player.getVelocity().y);
                 player.rotation = 25 * (float) Math.sin(temp);
-                if (whiteOverlay == 1f) {
+                if (whiteOverlay > 1f) {
                     dispose();
                     Preferences p = Gdx.app.getPreferences(OwlCityTribute.GAME_PREFS);
-                    p.putInteger("level", 6);
-                    if(p.getInteger("maxlevel") < 6){
-                        p.putInteger("maxlevel", 6);
+                    p.putInteger("level", 5);
+                    if(p.getInteger("maxlevel") < 5){
+                        p.putInteger("maxlevel", 5);
                     }
                     p.flush();
-                    gsm.currentState = GameStateManager.SPACE;
-                    this.gsm.setState(new Space(this.gsm));
+                    gsm.currentState = GameStateManager.SKY;
+                    this.gsm.setState(new Sky(this.gsm));
                 }
             }
             fallen = player.getPosition().y == -OwlCityTribute.HEIGHT * .1f;
 
-            if (!loss && fallen && !intro) {
+            if (!loss && fallen) {
                 loss = true;
                 gsm.push(new UponLoss(gsm));
             }
@@ -179,6 +177,8 @@ public class Sky extends State {
             noteAnim.update(dt);
             noteRotation += 100f * dt;
             if (noteRotation > 360) noteRotation = 0;
+
+            balloonFluctuation.update(dt);
 
             cam.position.x = player.getPosition().x + player.xOffset;
             float leftEdge = player.getPosition().x - (cam.viewportWidth / 2) + player.xOffset;
@@ -196,7 +196,7 @@ public class Sky extends State {
                 int w = (int) font.getBounds(sceneText.get(textCount).get(0)).width;
                 //int h = (int)(font.getBounds(sceneText.get(textCount).get(0)).height*2.5);
                 int h = (int) (font.getBounds(sceneText.get(textCount).get(0)).height * sceneText.get(textCount).size() * 1.5);
-                textBox.setBounds(w, h, (int) (OwlCityTribute.WIDTH * .75) - w / 2, (int) (OwlCityTribute.HEIGHT * .875) - h / 2);
+                textBox.setBounds(w, h, (int) (OwlCityTribute.WIDTH * .65) - w / 2, (int) (OwlCityTribute.HEIGHT * .875) - h / 2);
                 waiting = true;
                 shrinking = true;
             } else if (note.getPosition().x < leftEdge - noteAnim.getFrame().getRegionWidth() && !waiting && textCount < sceneText.size() - 1 && player.movement > player.maxMovement * .75) {
@@ -235,13 +235,37 @@ public class Sky extends State {
                 if (clouds.get(i).getPosition().x < leftEdge - cloud.getWidth()) {
                     int index = (i == 0) ? clouds.size - 1 : i - 1;
                     clouds.get(i).getPosition().x = (float) (clouds.get(index).getPosition().x + cam.viewportWidth * .8);
-                    clouds.get(i).yOffset = random.nextInt((int) (OwlCityTribute.HEIGHT * .2f)) - (int) (OwlCityTribute.HEIGHT * .1f);
+                    clouds.get(i).yOffset = random.nextInt((int) (OwlCityTribute.HEIGHT * .1f)) + (int) (OwlCityTribute.HEIGHT * .75f);
                 }
             }
+
+//        if(readyToFadeBlack){
+//            whiteValue  = (whiteValue > 0) ? whiteValue - .2f*dt : 0f;
+//            if(whiteValue == 0f){
+//                if(player.getPosition().y == -OwlCityTribute.HEIGHT*.1f){
+//                    dispose();
+//                    this.gsm.setState(new Sky(this.gsm));
+//                }
+//            }
+//        }
+            //else{
+            whiteValue = (whiteValue < 1f) ? whiteValue + .4f * dt : 1f;
+            //}
 
             //Shimmer update
             for (int i = 0; i < NUM_SHIMMERS; i++) {
                 shimmers.get(i).update(dt);
+            }
+
+            //Check brush
+            for (int i = 0; i < brushmoving.size; i++) {
+                brushmoving.get(i).MOVEMENT = -(player.movement/5);
+                brushmoving.get(i).update(dt);
+                if (brushmoving.get(i).getPosition().x < leftEdge - brush.getWidth() * 1.5) {
+                    int index = (i == 0) ? brushmoving.size - 1 : i - 1;
+                    brushmoving.get(i).getPosition().x = brushmoving.get(index).getPosition().x + brush.getWidth();
+                    break;
+                }
             }
 
             cam.update();
@@ -256,6 +280,8 @@ public class Sky extends State {
         cloud.dispose();
         player.getPlane().dispose();
         pauseButton.dispose();
+        balloon.dispose();
+        brush.dispose();
     }
 
     @Override
@@ -281,6 +307,11 @@ public class Sky extends State {
         sb.begin();
         //Draw pause
         sb.draw(pauseButton, cam.position.x - cam.viewportWidth/2 + cam.viewportWidth*.05f, cam.viewportHeight*.95f - pauseButton.getHeight());
+
+        //Draw balloon
+        sb.draw(balloon, cam.position.x - cam.viewportWidth/2 + balloonFluctuation.getPosition().x - balloon.getWidth()/2,
+                balloonFluctuation.getPosition().y - balloon.getHeight()/2);
+
 
         //Draw text
         if(!textBox.finished) {
@@ -327,7 +358,13 @@ public class Sky extends State {
                 planeRegion.getRegionHeight() / 2, player.getPlane().getWidth() * .75f,
                 player.getPlane().getHeight() * .75f, 1, 1, player.rotation);
 
-        sb.setColor(whiteValue, whiteValue, whiteValue, .5f);
+        sb.setColor(whiteValue, whiteValue, whiteValue, 1f);
+
+        //draw brush
+        for(FluctuatingObject f : brushmoving){
+            sb.draw(brush, f.getPosition().x, f.getPosition().y);
+        }
+
         sb.end();
         //HUD
         Matrix4 uiMatrix = cam.combined.cpy();
@@ -340,11 +377,9 @@ public class Sky extends State {
         sr.begin(ShapeRenderer.ShapeType.Filled);
         Gdx.gl.glEnable(GL20.GL_BLEND);
 
-        if(whiteOverlay >= 0 && whiteOverlay <= 1) {
-            sr.setColor(1f, 1f, 1f, whiteOverlay);
-            sr.setProjectionMatrix(cam.combined);
-            sr.rect(leftEdge, 0, cam.viewportWidth, cam.viewportHeight);
-        }
+        sr.setColor(1f, 1f, 1f, whiteOverlay);
+        sr.setProjectionMatrix(cam.combined);
+        sr.rect(leftEdge, 0, cam.viewportWidth, cam.viewportHeight);
         sr.end();
     }
 
